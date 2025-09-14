@@ -73,15 +73,15 @@ export const imports = pgTable('imports', {
 
 /** settings */
 export const settings = pgTable('settings', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').primaryKey(),
   shopId: uuid('shop_id').notNull().references(() => shops.id, { onDelete: 'cascade' }),
-  ignoreRules: jsonb('ignore_rules'),   // default '[]' côté DB
-  locales: jsonb('locales'),            // default '["en"]' côté DB
-  autoRefresh: boolean('auto_refresh').default(true),
-  digestEmail: boolean('digest_email').default(true),
-  digestFrequency: text('digest_frequency').default('weekly'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  ignoreRules: jsonb('ignore_rules'),
+  locales: jsonb('locales'),
+  autoRefresh: boolean('auto_refresh').notNull(),
+  digestEmail: boolean('digest_email').notNull(),
+  digestFrequency: text('digest_frequency').notNull(),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
 }, (t) => ({
   shopIdx: index('settings_shop_id_idx').on(t.shopId),
 }));

@@ -105,10 +105,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Create default settings if they don't exist
+    const settingsId = crypto.randomUUID()
     await db
       .insert(settings)
       .values({
+        id: settingsId,
         shopId: shopRecord.id,
+        ignoreRules: [],
+        locales: ['en'],
+        autoRefresh: true,
+        digestEmail: true,
+        digestFrequency: 'weekly',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
       .onConflictDoNothing()
 
