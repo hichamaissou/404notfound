@@ -123,7 +123,6 @@ async function processCrawlResult(
 ): Promise<string[]> {
   // Insert scan page result
   await db.insert(scanPages).values({
-    id: crypto.randomUUID(),
     scanId,
     url: result.url,
     statusCode: result.statusCode,
@@ -131,32 +130,31 @@ async function processCrawlResult(
     redirectedTo: result.redirectedTo,
     depth: result.depth,
     contentType: result.contentType,
-    fetchedAt: new Date(),
   })
 
   // Insert link issues for broken links
   if (result.statusCode >= 400) {
     await db.insert(linkIssues).values({
-      id: crypto.randomUUID(),
       scanId,
       fromUrl: result.url,
       toUrl: result.url,
       type: 'broken_link',
-      statusCode: result.statusCode,
-      createdAt: new Date(),
+      details: { statusCode: result.statusCode },
+      firstSeen: new Date(),
+      lastSeen: new Date(),
     })
   }
 
   // Insert link issues for redirects
   if (result.statusCode >= 300 && result.statusCode < 400 && result.redirectedTo) {
     await db.insert(linkIssues).values({
-      id: crypto.randomUUID(),
       scanId,
       fromUrl: result.url,
       toUrl: result.redirectedTo,
       type: 'redirect_chain',
-      statusCode: result.statusCode,
-      createdAt: new Date(),
+      details: { statusCode: result.statusCode },
+      firstSeen: new Date(),
+      lastSeen: new Date(),
     })
   }
 

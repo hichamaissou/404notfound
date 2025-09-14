@@ -28,11 +28,14 @@ export class WebScanner {
 
   async startScan(shopId: string, shopDomain: string, accessToken: string): Promise<string> {
     // Create scan record
+    const scanId = crypto.randomUUID()
     const [scan] = await db
       .insert(siteScans)
       .values({
+        id: scanId,
         shopId,
         status: 'queued',
+        startedAt: new Date(),
         seeds: [],
         stats: {},
       })

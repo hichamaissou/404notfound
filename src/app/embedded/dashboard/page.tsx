@@ -246,7 +246,6 @@ export default function DashboardPage() {
                             <Text as="p" variant="bodySm">
                               Add our tracking snippet to your theme to capture 404 errors automatically.
                             </Text>
-                  </div>
                             <Button size="slim" url="https://help.redirectwatch.com/setup">
                               View Setup Guide
                             </Button>
@@ -262,7 +261,6 @@ export default function DashboardPage() {
                             <Text as="p" variant="bodySm">
                               Scan your website to discover existing broken links and redirect opportunities.
                             </Text>
-                  </div>
                             <Button size="slim" variant="primary" onClick={handleScanNow}>
                               Start Scan
                             </Button>
@@ -278,7 +276,6 @@ export default function DashboardPage() {
                             <Text as="p" variant="bodySm">
                               Use our auto-fix feature or create manual redirects to resolve 404 errors.
                             </Text>
-                  </div>
                             <Button size="slim" url="/embedded/autofix">
                               Auto-fix
                             </Button>
@@ -348,8 +345,9 @@ export default function DashboardPage() {
                 <div style={{ padding: '1rem' }}>
                   <div style={{ marginBottom: '1rem' }}>
                     <Text as="h3" variant="headingSm">
-                    404 Trend (Last 14 Days)
-                  </Text>
+                      404 Trend (Last 14 Days)
+                    </Text>
+                  </div>
                   <div style={{ height: '300px' }}>
                     <Line data={trendChartData} options={chartOptions} />
                   </div>
@@ -360,8 +358,9 @@ export default function DashboardPage() {
                 <div style={{ padding: '1rem' }}>
                   <div style={{ marginBottom: '1rem' }}>
                     <Text as="h3" variant="headingSm">
-                    Top 5 Broken Paths
-                  </Text>
+                      Top 5 Broken Paths
+                    </Text>
+                  </div>
                   <div style={{ height: '300px' }}>
                     <Bar data={topPathsChartData} options={chartOptions} />
                   </div>
@@ -393,8 +392,9 @@ export default function DashboardPage() {
                 <div style={{ padding: '1rem' }}>
                   <div style={{ marginBottom: '1rem' }}>
                     <Text as="h3" variant="headingSm">
-                    Top Broken Paths Details
-                  </Text>
+                      Top Broken Paths Details
+                    </Text>
+                  </div>
                   <DataTable
                     columnContentTypes={['text', 'numeric', 'text']}
                     headings={['Path', 'Hits', 'First Seen']}

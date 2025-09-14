@@ -180,7 +180,7 @@ export default function RulesPage() {
                               Priority: {rule.priority} | Flags: {rule.flags || 'g'}
                             </Text>
                           </div>
-                          <Badge tone={rule.enabled ? 'success' : 'subdued'}>
+                          <Badge tone={rule.enabled ? 'success' : undefined}>
                             {rule.enabled ? 'Enabled' : 'Disabled'}
                           </Badge>
                         </div>

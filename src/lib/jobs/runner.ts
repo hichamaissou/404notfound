@@ -156,7 +156,10 @@ export async function runPendingJobs(max: number = 10): Promise<{ processed: num
           .where(eq(jobs.id, job.id))
         
         // Process the job
-        await processJob(job)
+        await processJob({
+          ...job,
+          payload: job.payload as JobPayload
+        })
         processed++
         
       } catch (error) {
