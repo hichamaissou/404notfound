@@ -1,13 +1,8 @@
 {
-  "buildCommand": "npm run build",
-  "installCommand": "npm ci",
   "framework": "nextjs",
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "SKIP_DB_PUSH": "1"
   }
 }

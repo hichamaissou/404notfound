@@ -7,8 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:push": "drizzle-kit push",
-    "postinstall": "node scripts/db-push-if-env.cjs"
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "next": "^15.5.3",
