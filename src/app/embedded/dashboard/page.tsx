@@ -93,7 +93,7 @@ export default function DashboardPage() {
     }
 
     try {
-      const response = await fetch(`/api/dashboard?shop=${encodeURIComponent(shop)}`)
+      const response = await fetch(`/api/scans/status-simple?shop=${encodeURIComponent(shop)}`)
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data')
       }
@@ -128,7 +128,7 @@ export default function DashboardPage() {
 
       console.log('Shop test passed:', testData)
 
-      const response = await fetch('/api/scans/queue', {
+      const response = await fetch('/api/scans/run-simple', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
