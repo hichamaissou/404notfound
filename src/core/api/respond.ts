@@ -1,27 +1,20 @@
 import { NextResponse } from 'next/server'
 
 /**
- * Generates a requestId and returns a JSON response with the id attached
- * in both the body and the `x-request-id` header.
- * Does not alter the response shape beyond adding `requestId`.
+ * Generates a unique request ID for tracing
  */
-export function jsonWithRequestId<T extends Record<string, unknown> | undefined>(
-  body: T,
-  init?: ResponseInit
-) {
-  const requestId = (globalThis as any).crypto?.randomUUID
-    ? (globalThis as any).crypto.randomUUID()
-    : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`
-
-  const json = NextResponse.json(
-    body
-      ? { ...body, requestId }
-      : // allow returning {ok:true} via caller and still enrich
-        ({ requestId } as Record<string, unknown>),
-    init
-  )
-
-  json.headers.set('x-request-id', requestId)
-  return json
+function generateRequestId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
+/**
+ * Creates a JSON response with a request ID for tracing
+ */
+export function jsonWithRequestId(data: any, init?: ResponseInit): NextResponse {
+  const responseData = {
+    ...data,
+    requestId: generateRequestId(),
+  }
+  
+  return NextResponse.json(responseData, init)
+}

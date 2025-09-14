@@ -99,7 +99,7 @@ export default function DashboardPage() {
     }
 
     try {
-      const response = await fetch('/api/scans/queue', {
+      const response = await fetch('/api/scans/queue-working', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
