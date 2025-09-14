@@ -1,5 +1,6 @@
-import { db, siteScans, scanPages, linkIssues, jobs } from '@/lib/db'
-import { eq, and, inArray } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
+
+import { db, jobs,linkIssues, scanPages, siteScans } from '@/lib/db'
 import { createShopifyAdminGraphQL } from '@/lib/shopify/admin-graphql'
 
 interface CrawlJob {

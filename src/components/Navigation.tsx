@@ -1,11 +1,9 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
 import { 
-  Card,
-  ButtonGroup,
-  Button
-} from '@shopify/polaris'
+  Button,
+  ButtonGroup} from '@shopify/polaris'
+import { usePathname } from 'next/navigation'
 
 export default function Navigation() {
   const pathname = usePathname()

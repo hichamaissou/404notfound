@@ -1,9 +1,10 @@
+import { parse } from 'csv-parse/sync'
+import { eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getSessionFromHeaders } from '@/lib/auth/jwt'
 import { db, imports, redirects, shops } from '@/lib/db'
-import { eq } from 'drizzle-orm'
 import { createShopifyAdminGraphQL } from '@/lib/shopify/admin-graphql'
-import { parse } from 'csv-parse/sync'
 
 export async function POST(request: NextRequest) {
   try {

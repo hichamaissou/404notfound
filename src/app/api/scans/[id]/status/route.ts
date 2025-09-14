@@ -1,7 +1,8 @@
+import { and, count,eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getSessionFromHeaders } from '@/lib/auth/jwt'
-import { db, siteScans, scanPages, linkIssues, jobs } from '@/lib/db'
-import { eq, and, count } from 'drizzle-orm'
+import { db, jobs,linkIssues, scanPages, siteScans } from '@/lib/db'
 
 export async function GET(request: NextRequest, ctx: any) {
   try {

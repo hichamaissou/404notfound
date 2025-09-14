@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateShopDomain, buildAuthUrl, generateState } from '@/lib/auth/oauth'
+
+import { buildAuthUrl, generateState,validateShopDomain } from '@/lib/auth/oauth'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)

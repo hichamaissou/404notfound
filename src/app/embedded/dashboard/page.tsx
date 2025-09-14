@@ -1,30 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { 
-  Page, 
-  Layout, 
-  Card, 
-  Text, 
+  Badge,
   Button, 
   ButtonGroup,
-  Badge,
+  Card, 
   DataTable,
-  Toast,
-  Frame
-} from '@shopify/polaris'
+  Frame,
+  Layout, 
+  Page, 
+  Text, 
+  Toast} from '@shopify/polaris'
 import { 
-  Chart as ChartJS,
+  BarElement,
   CategoryScale,
+  Chart as ChartJS,
+  Legend,
   LinearScale,
-  PointElement,
   LineElement,
+  PointElement,
   Title,
   Tooltip,
-  Legend,
-  BarElement,
 } from 'chart.js'
-import { Line, Bar } from 'react-chartjs-2'
+import { useEffect, useState } from 'react'
+import { Bar,Line } from 'react-chartjs-2'
+
 import { getShop } from '@/lib/shop/context'
 
 ChartJS.register(
@@ -225,7 +225,7 @@ export default function DashboardPage() {
 
   // Chart data for top broken paths
   const topPathsChartData = {
-    labels: topBrokenPaths.map(p => p.path.length > 20 ? p.path.substring(0, 20) + '...' : p.path),
+    labels: topBrokenPaths.map(p => p.path.length > 20 ? `${p.path.substring(0, 20)  }...` : p.path),
     datasets: [
       {
         label: 'Hits',

@@ -1,6 +1,7 @@
-import { db, jobs, siteScans } from '@/lib/db'
-import { eq, and, lte, sql } from 'drizzle-orm'
+import { and, eq, lte } from 'drizzle-orm'
+
 import { crawlSite } from '@/lib/crawler'
+import { db, jobs, siteScans } from '@/lib/db'
 
 interface JobPayload {
   [key: string]: any

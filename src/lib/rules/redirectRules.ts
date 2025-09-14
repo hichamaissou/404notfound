@@ -1,5 +1,6 @@
+import { asc,eq } from 'drizzle-orm'
+
 import { db, redirectRules } from '@/lib/db'
-import { eq, and, asc } from 'drizzle-orm'
 
 export interface RedirectRule {
   id: string

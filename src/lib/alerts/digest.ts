@@ -1,6 +1,8 @@
-import { db, shops, brokenUrls, redirects, settings, alerts } from '@/lib/db'
-import { eq, gte, desc, and } from 'drizzle-orm'
-import { sendEmail, generateWeeklyDigestEmail, generateAlertEmail } from './email'
+import { and, eq, gte } from 'drizzle-orm'
+
+import { alerts,brokenUrls, db, redirects, settings, shops } from '@/lib/db'
+
+import { generateAlertEmail,generateWeeklyDigestEmail, sendEmail } from './email'
 
 export async function sendWeeklyDigests(): Promise<void> {
   console.log('Starting weekly digest generation...')
@@ -9,7 +11,7 @@ export async function sendWeeklyDigests(): Promise<void> {
   const shopsWithDigest = await db
     .select({
       shop: shops,
-      settings: settings,
+      settings,
     })
     .from(shops)
     .innerJoin(settings, eq(settings.shopId, shops.id))

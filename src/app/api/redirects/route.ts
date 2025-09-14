@@ -1,7 +1,8 @@
+import { and,desc, eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getSessionFromHeaders } from '@/lib/auth/jwt'
-import { db, redirects, shops, brokenUrls } from '@/lib/db'
-import { eq, desc, and } from 'drizzle-orm'
+import { brokenUrls,db, redirects, shops } from '@/lib/db'
 import { createShopifyAdminGraphQL } from '@/lib/shopify/admin-graphql'
 
 export async function GET(request: NextRequest) {

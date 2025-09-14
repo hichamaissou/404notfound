@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db, shops, siteScans, jobs } from '@/lib/db'
 import { eq } from 'drizzle-orm'
+import { NextRequest, NextResponse } from 'next/server'
+
+import { db, jobs,shops, siteScans } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {

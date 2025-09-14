@@ -1,5 +1,6 @@
-import { db, siteScans, scanPages, linkIssues } from '@/lib/db'
 import { eq, sql } from 'drizzle-orm'
+
+import { db, linkIssues,scanPages, siteScans } from '@/lib/db'
 
 interface CrawlOptions {
   shopDomain: string

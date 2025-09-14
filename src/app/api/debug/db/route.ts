@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
       connection: 'success',
       testQuery: result,
       shopsTable: tableInfo,
-      uuidExtension: uuidExtension,
+      uuidExtension,
       databaseUrl: process.env.DATABASE_URL ? 'present' : 'missing'
     })
   } catch (error) {

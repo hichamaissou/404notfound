@@ -1,20 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import {
+  Badge,
+  Banner,
+  Button,
   Card,
   DataTable,
-  Button,
-  Modal,
-  FormLayout,
-  TextField,
-  Select,
-  Banner,
-  Text,
-  Badge,
   EmptyState,
+  FormLayout,
+  Modal,
   Tabs,
+  Text,
+  TextField,
 } from '@shopify/polaris'
+import { useEffect,useState } from 'react'
 
 interface Redirect {
   id: number

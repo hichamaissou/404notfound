@@ -1,7 +1,8 @@
+import {desc, eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getSessionFromHeaders } from '@/lib/auth/jwt'
-import { db, brokenUrls, settings } from '@/lib/db'
-import { eq, desc, and } from 'drizzle-orm'
+import { brokenUrls, db, settings } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,14 +33,14 @@ export async function GET(request: NextRequest) {
     // Calculate stats
     const stats = {
       total404s: urls.length,
-      totalHits: urls.reduce((sum, url) => sum + url.hits, 0),
-      resolvedCount: urls.filter(url => url.isResolved).length,
-      weeklyNew: urls.filter(url => {
+      totalHits: urls.reduce((sum: number, url: any) => sum + url.hits, 0),
+      resolvedCount: urls.filter((url: any) => url.isResolved).length,
+      weeklyNew: urls.filter((url: any) => {
         const weekAgo = new Date()
         weekAgo.setDate(weekAgo.getDate() - 7)
         return new Date(url.firstSeen) > weekAgo
       }).length,
-      estimatedRevenueLoss: urls.reduce((sum, url) => {
+      estimatedRevenueLoss: urls.reduce((sum: number, url: any) => {
         return sum + (url.isResolved ? 0 : url.hits * conversionRate * avgOrderValue)
       }, 0),
     }

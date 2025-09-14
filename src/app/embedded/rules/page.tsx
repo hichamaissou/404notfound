@@ -1,18 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { 
-  Page, 
-  Layout, 
-  Card, 
-  Text, 
-  Button, 
   Badge,
-  Toast,
+  Banner,
+  Button, 
+  Card, 
   Frame,
+  Layout, 
+  Page, 
+  Text, 
   TextField,
-  Banner
-} from '@shopify/polaris'
+  Toast} from '@shopify/polaris'
+import { useEffect, useState } from 'react'
+
 import { getShop } from '@/lib/shop/context'
 
 interface RedirectRule {

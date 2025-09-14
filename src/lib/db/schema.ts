@@ -1,8 +1,7 @@
 // src/lib/db/schema.ts
 import {
-  pgTable, uuid, text, timestamp, integer, boolean, jsonb, numeric, index,
-} from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+boolean, index,
+integer, jsonb, numeric,   pgTable, text, timestamp, uuid, } from 'drizzle-orm/pg-core';
 
 /* =========================
    CORE TABLES (alignées Supabase)
@@ -206,3 +205,13 @@ export const alerts = pgTable('alerts', {
   typeIdx: index('alerts_type_idx').on(t.type),
   sentIdx: index('alerts_sent_at_idx').on(t.sentAt),
 }));
+
+// Database client instance
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+
+const client = postgres(process.env.DATABASE_URL || '', {
+  max: 10,
+})
+
+export const db = drizzle(client)

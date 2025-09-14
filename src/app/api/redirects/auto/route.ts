@@ -1,7 +1,8 @@
+import { and,eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { db, shops, brokenUrls, redirects } from '@/lib/db'
-import { eq, and } from 'drizzle-orm'
+
 import { pathSimilarity } from '@/lib/algorithms/jaroWinkler'
+import { brokenUrls, db, redirects,shops } from '@/lib/db'
 
 interface AutoFixRequest {
   shop: string

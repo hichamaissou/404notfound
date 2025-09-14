@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { validateShopDomain, exchangeCodeForToken } from '@/lib/auth/oauth'
-import { createJWT } from '@/lib/auth/jwt'
-import { db, shops, settings, subscriptions } from '@/lib/db'
-import { eq } from 'drizzle-orm'
-import type { InferInsertModel } from 'drizzle-orm'
 import crypto from 'crypto'
+import type { InferInsertModel } from 'drizzle-orm'
+import { NextRequest, NextResponse } from 'next/server'
+
+import { createJWT } from '@/lib/auth/jwt'
+import { exchangeCodeForToken,validateShopDomain } from '@/lib/auth/oauth'
+import { db, settings, shops, subscriptions } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   // Log all cookies for debugging
   const allCookies = request.cookies.getAll()
-  console.log('All cookies received:', allCookies.map(c => ({ name: c.name, value: c.value.substring(0, 10) + '...' })))
+  console.log('All cookies received:', allCookies.map(c => ({ name: c.name, value: `${c.value.substring(0, 10)  }...` })))
 
   // Verify state parameter
   const storedState = request.cookies.get('oauth_state')?.value
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         .returning()
       
       shopRecord = result[0]
-      console.log('Shop record created/updated:', { id: shopRecord.id, domain: shopRecord.shopDomain })
+      console.log('Shop record created/updated:', { id: shopRecord?.id, domain: shopRecord?.shopDomain })
     } catch (dbError) {
       console.error('Database error details:', {
         error: dbError,
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
       .insert(settings)
       .values({
         id: settingsId,
-        shopId: shopRecord.id,
+        shopId: shopRecord?.id || '',
         ignoreRules: [],
         locales: ['en'],
         autoRefresh: true,
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
     const currency = process.env.BILLING_CURRENCY ?? 'EUR';
 
     const subscriptionData: InferInsertModel<typeof subscriptions> = {
-      shopId: shopRecord.id,
+      shopId: shopRecord?.id || '',
       planName,
       priceAmount,
       currency,
@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
 
     // Create JWT token
     const token = await createJWT({
-      shopId: shopRecord.id,
+      shopId: shopRecord?.id || '',
       shopDomain: shop,
     })
 

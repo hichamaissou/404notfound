@@ -1,7 +1,8 @@
+import { eq, sql } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAppProxySignature, extractShopFromQuery } from '@/lib/shopify/proxy'
-import { db, shops, brokenUrls } from '@/lib/db'
-import { eq, and, sql } from 'drizzle-orm'
+
+import { brokenUrls,db, shops } from '@/lib/db'
+import { extractShopFromQuery,verifyAppProxySignature } from '@/lib/shopify/proxy'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)

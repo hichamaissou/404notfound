@@ -1,6 +1,7 @@
+import { asc,eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { db, shops, redirectRules } from '@/lib/db'
-import { eq, asc } from 'drizzle-orm'
+
+import { db, redirectRules,shops } from '@/lib/db'
 
 // GET - List all rules for a shop
 export async function GET(request: NextRequest) {

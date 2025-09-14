@@ -1,22 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import {
-  Page,
-  Layout,
-  Card,
-  Text,
-  Button,
-  DataTable,
   Badge,
   Banner,
-  Tabs,
-  Spinner,
+  Button,
+  Card,
+  DataTable,
   EmptyState,
+  Layout,
+  Page,
+  Spinner,
+  Tabs,
+  Text,
 } from '@shopify/polaris'
-import { ChartVerticalIcon, EditIcon, ImportIcon } from '@shopify/polaris-icons'
-import RedirectManagement from './RedirectManagement'
+import { useEffect,useState } from 'react'
+
 import CSVImport from './CSVImport'
+import RedirectManagement from './RedirectManagement'
 
 interface DashboardProps {
   token: string

@@ -1,20 +1,18 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
 import {
-  Card,
-  Text,
-  DropZone,
-  Banner,
-  ProgressBar,
-  DataTable,
   Badge,
+  Banner,
   Button,
-  Modal,
-  FormLayout,
-  TextField,
+  Card,
+  DataTable,
+  DropZone,
   EmptyState,
+  Modal,
+  ProgressBar,
+  Text,
 } from '@shopify/polaris'
+import { useCallback,useEffect, useState } from 'react'
 
 interface ImportRecord {
   id: number
@@ -84,7 +82,7 @@ export default function CSVImport({ token }: CSVImportProps) {
       const preview: Array<{ path: string; target: string }> = []
 
       for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim()
+        const line = lines[i]?.trim()
         if (!line) continue
 
         const [path, target] = line.split(',').map(col => col.trim().replace(/^"|"$/g, ''))

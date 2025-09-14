@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db, redirectRules } from '@/lib/db'
 import { eq } from 'drizzle-orm'
+import { NextRequest, NextResponse } from 'next/server'
+
+import { db, redirectRules } from '@/lib/db'
 
 // PATCH - Update a rule
 export async function PATCH(request: NextRequest, ctx: any) {

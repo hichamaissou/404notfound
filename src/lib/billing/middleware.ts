@@ -1,6 +1,7 @@
-import { db, subscriptions } from '@/lib/db'
 import { eq } from 'drizzle-orm'
+
 import { JWTPayload } from '@/lib/auth/jwt'
+import { db, subscriptions } from '@/lib/db'
 
 export interface BillingStatus {
   hasActiveSubscription: boolean

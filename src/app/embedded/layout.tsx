@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { AppProvider as PolarisAppProvider } from '@shopify/polaris'
-import createApp from '@shopify/app-bridge'
-import en from '@shopify/polaris/locales/en.json'
 import '@shopify/polaris/build/esm/styles.css'
-import { setShopInStorage } from '@/lib/shop/context'
+
+import createApp from '@shopify/app-bridge'
+import { AppProvider as PolarisAppProvider } from '@shopify/polaris'
+import en from '@shopify/polaris/locales/en.json'
+import { useEffect, useState } from 'react'
+
 import Navigation from '@/components/Navigation'
+import { setShopInStorage } from '@/lib/shop/context'
 
 interface EmbeddedLayoutProps {
   children: React.ReactNode

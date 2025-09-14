@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { runPendingJobs } from '@/lib/jobs/runner'
 
 export async function POST(request: NextRequest) {

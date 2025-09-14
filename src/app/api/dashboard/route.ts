@@ -1,6 +1,7 @@
+import { and, eq, gte, sql } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { db, shops, brokenUrls } from '@/lib/db'
-import { eq, and, gte, sql } from 'drizzle-orm'
+
+import { brokenUrls,db, shops } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,17 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { 
-  Page, 
-  Layout, 
-  Card, 
-  Text, 
-  Button, 
   Badge,
-  Toast,
+  Button, 
+  Card, 
   Frame,
-  Banner
-} from '@shopify/polaris'
+  Layout, 
+  Page, 
+  Text, 
+  Toast} from '@shopify/polaris'
+import { useEffect, useState } from 'react'
+
 import { getShop } from '@/lib/shop/context'
 
 interface Scan {

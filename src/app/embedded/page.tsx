@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Dashboard from '@/components/Dashboard'
+import { Suspense,useEffect, useState } from 'react'
+
 
 function HomePageContent() {
   const [token, setToken] = useState<string | null>(null)

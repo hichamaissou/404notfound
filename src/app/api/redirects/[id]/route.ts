@@ -1,8 +1,8 @@
+import { and,eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getSessionFromHeaders } from '@/lib/auth/jwt'
 import { db, redirects, shops } from '@/lib/db'
-import { eq, and } from 'drizzle-orm'
-import { createShopifyAdminGraphQL } from '@/lib/shopify/admin-graphql'
 
 export async function PATCH(request: NextRequest, ctx: any) {
   try {

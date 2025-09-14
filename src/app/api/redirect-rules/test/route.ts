@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { applyRules, type RedirectRule } from '@/lib/rules/redirectRules'
 
 interface TestRequest {
@@ -30,9 +31,9 @@ export async function POST(request: NextRequest) {
       id: `test-${index}`,
       pattern: rule.pattern,
       replacement: rule.replacement,
-      flags: rule.flags,
-      enabled: rule.enabled,
-      priority: rule.priority,
+      flags: rule.flags || 'g',
+      enabled: rule.enabled ?? true,
+      priority: rule.priority ?? 100,
     }))
 
     // Apply rules to the path

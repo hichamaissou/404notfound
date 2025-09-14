@@ -2,6 +2,8 @@
 
 A premium Shopify embedded app for 404 tracking and redirect management, built with Next.js 15, Polaris, and Drizzle ORM.
 
+**Recently Refactored** - Clean architecture with domain modules, type safety, and maintainable code structure.
+
 ## Features
 
 ### 🎯 **Core Features**
@@ -29,6 +31,72 @@ A premium Shopify embedded app for 404 tracking and redirect management, built w
 - **Auth**: OAuth 2.0 + JWT + App Bridge v3
 - **Deployment**: Vercel with cron jobs
 - **Email**: Resend (optional)
+- **Quality**: ESLint + Prettier + Strict TypeScript
+
+## Architecture
+
+### Folder Structure
+```
+src/
+├── config/           # Environment configuration (zod validated)
+├── core/             # Cross-cutting concerns (errors, logging, API)
+├── modules/          # Domain-specific business logic
+│   ├── auth/         # OAuth flow and cookie management
+│   ├── db/           # Database client and repositories
+│   ├── shopify/      # Shopify Admin API integration
+│   ├── crawler/      # Web crawling functionality
+│   └── jobs/         # Background job system
+├── ui/               # Reusable components and hooks
+└── app/              # Next.js routes (unchanged URLs)
+```
+
+### Key Principles
+- **Clean Architecture**: Domain modules with clear boundaries
+- **Type Safety**: Strict TypeScript with zod validation
+- **Error Handling**: Consistent error responses with request tracing
+- **Observability**: Structured logging with request IDs
+
+## Development
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL database (Supabase recommended)
+- Shopify Partner account
+
+### Setup
+```bash
+# Clone and install
+git clone <repository>
+cd redirect-watch
+npm install
+
+# Environment setup
+cp .env.example .env.local
+# Fill in your environment variables
+
+# Database setup
+npm run db:push
+
+# Development server
+npm run dev
+```
+
+### Scripts
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run typecheck` - TypeScript validation
+- `npm run lint` - Code quality checks
+- `npm run format` - Code formatting
+- `npm run build:ci` - Full validation pipeline
+
+### Adding New Features
+
+1. **Create Module**: Add to `src/modules/[feature]/`
+2. **Repository Layer**: Database operations in `src/modules/db/repo/`
+3. **Service Layer**: Business logic in `src/modules/[feature]/service.ts`
+4. **API Routes**: Use `withJson()` wrapper for consistency
+5. **UI Components**: Reusable components in `src/ui/components/`
+6. **Documentation**: JSDoc comments on all exports
 
 ## Environment Variables
 

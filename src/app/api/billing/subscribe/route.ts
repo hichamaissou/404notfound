@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getSessionFromHeaders } from '@/lib/auth/jwt'
-import { db, subscriptions, shops } from '@/lib/db'
 import { eq } from 'drizzle-orm'
+import { NextRequest, NextResponse } from 'next/server'
+
+import { getSessionFromHeaders } from '@/lib/auth/jwt'
+import { db, shops,subscriptions } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
         .update(subscriptions)
         .set({
           status: 'active',
-          shopifySubscriptionId: 'test_subscription_' + Date.now(),
+          shopifySubscriptionId: `test_subscription_${  Date.now()}`,
           currentPeriodEnd,
           updatedAt: new Date(),
         })
