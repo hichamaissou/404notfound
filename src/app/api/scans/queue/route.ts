@@ -39,15 +39,16 @@ export async function POST(request: NextRequest) {
     const concurrency = 4
 
     // Create site scan record
-    const scanId = crypto.randomUUID()
-    console.log('Creating site scan with ID:', scanId)
+    console.log('Creating site scan...')
     
-    await db.insert(siteScans).values({
-      id: scanId,
+    const [insertedScan] = await db.insert(siteScans).values({
       shopId,
       status: 'queued',
       startedAt: new Date(),
-    })
+    }).returning({ id: siteScans.id })
+    
+    const scanId = insertedScan.id
+    console.log('Site scan created with ID:', scanId)
 
     console.log('Site scan created successfully')
 

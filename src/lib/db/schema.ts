@@ -111,7 +111,7 @@ export const subscriptions = pgTable('subscriptions', {
 
 /** site_scans */
 export const siteScans = pgTable('site_scans', {
-  id: uuid('id').primaryKey(),
+  id: uuid('id').defaultRandom().primaryKey(),
   shopId: uuid('shop_id').notNull().references(() => shops.id, { onDelete: 'cascade' }),
   status: text('status').notNull(),  // queued|running|done|failed
   startedAt: timestamp('started_at').notNull(),
