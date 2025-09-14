@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation'
 
-export default function InstallPage({
+export default async function InstallPage({
   searchParams,
 }: {
-  searchParams: { shop?: string }
+  searchParams: Promise<{ shop?: string }>
 }) {
-  const shop = searchParams.shop
+  const params = await searchParams
+  const shop = params.shop
 
   if (!shop) {
     return (

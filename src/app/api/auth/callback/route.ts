@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Redirect to app with token
-    const appUrl = `/?token=${token}&shop=${shop}`
+    const appUrl = `/embedded?token=${token}&shop=${shop}`
     return NextResponse.redirect(new URL(appUrl, request.url))
   } catch (error) {
     console.error('OAuth callback error:', error)

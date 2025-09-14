@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Dashboard from '@/components/Dashboard'
 
-export default function HomePage() {
+function HomePageContent() {
   const [token, setToken] = useState<string | null>(null)
   const searchParams = useSearchParams()
 
@@ -44,4 +44,22 @@ export default function HomePage() {
   }
 
   return <Dashboard token={token} />
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontFamily: 'system-ui, sans-serif'
+      }}>
+        <div>Loading...</div>
+      </div>
+    }>
+      <HomePageContent />
+    </Suspense>
+  )
 }
