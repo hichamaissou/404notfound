@@ -111,13 +111,14 @@ export const subscriptions = pgTable('subscriptions', {
 
 /** site_scans */
 export const siteScans = pgTable('site_scans', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').primaryKey(),
   shopId: uuid('shop_id').notNull().references(() => shops.id, { onDelete: 'cascade' }),
-  status: text('status').notNull().default('queued'),  // queued|running|done|failed
-  startedAt: timestamp('started_at').defaultNow().notNull(),
+  status: text('status').notNull(),  // queued|running|done|failed
+  startedAt: timestamp('started_at').notNull(),
   finishedAt: timestamp('finished_at'),
-  seeds: jsonb('seeds'),   // array d’URLs seed
+  seeds: jsonb('seeds'),   // array d'URLs seed
   stats: jsonb('stats'),   // ex: { pages:1234, broken:23, chains:4, loops:1 }
+  lastError: text('last_error'),
 }, (t) => ({
   shopIdx: index('site_scans_shop_id_idx').on(t.shopId),
   statusIdx: index('site_scans_status_idx').on(t.status),
@@ -160,15 +161,15 @@ export const linkIssues = pgTable('link_issues', {
 
 /** redirect_rules (regex engine) */
 export const redirectRules = pgTable('redirect_rules', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').primaryKey(),
   shopId: uuid('shop_id').notNull().references(() => shops.id, { onDelete: 'cascade' }),
   pattern: text('pattern').notNull(),       // ex: ^/collections/(.*)-old$
   replacement: text('replacement').notNull(),  // /collections/$1
-  flags: text('flags').notNull().default('i'), // i, g, etc.
-  enabled: boolean('enabled').notNull().default(true),
-  priority: integer('priority').notNull().default(100),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  flags: text('flags'),                     // i, g, etc.
+  enabled: boolean('enabled').notNull(),
+  priority: integer('priority').notNull(),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
 }, (t) => ({
   shopIdx: index('redirect_rules_shop_id_idx').on(t.shopId),
   enabledIdx: index('redirect_rules_enabled_idx').on(t.enabled),

@@ -43,7 +43,9 @@ function HomePageContent() {
     )
   }
 
-  return <Dashboard token={token} />
+  // Redirect to dashboard
+  window.location.href = '/embedded/dashboard'
+  return null
 }
 
 export default function HomePage() {

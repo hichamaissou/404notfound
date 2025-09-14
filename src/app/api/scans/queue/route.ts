@@ -1,60 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSessionFromHeaders } from '@/lib/auth/jwt'
-import { db, shops, siteScans } from '@/lib/db'
-import { eq, desc } from 'drizzle-orm'
-import { WebScanner } from '@/lib/crawler/scanner'
+import { db, shops, settings, siteScans } from '@/lib/db'
+import { eq } from 'drizzle-orm'
+import { createJob } from '@/lib/jobs/runner'
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSessionFromHeaders(request.headers)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if there's already a running scan
-    const [existingScan] = await db
-      .select()
-      .from(siteScans)
-      .where(eq(siteScans.shopId, session.shopId))
-      .orderBy(desc(siteScans.startedAt))
-      .limit(1)
-
-    if (existingScan && (existingScan.status === 'queued' || existingScan.status === 'running')) {
-      return NextResponse.json({ 
-        error: 'A scan is already in progress',
-        scanId: existingScan.id,
-      }, { status: 409 })
-    }
-
-    // Get shop details
-    const [shop] = await db
-      .select()
-      .from(shops)
-      .where(eq(shops.id, session.shopId))
-      .limit(1)
+    const body = await request.json()
+    const { shop } = body
 
     if (!shop) {
+      return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 })
+    }
+
+    // Validate shop exists
+    const shopRecord = await db
+      .select({ id: shops.id })
+      .from(shops)
+      .where(eq(shops.shopDomain, shop))
+      .limit(1)
+
+    if (!shopRecord.length) {
       return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
     }
 
-    // Start new scan
-    const scanner = new WebScanner()
-    const scanId = await scanner.startScan(session.shopId, shop.shopDomain, shop.accessToken)
+    const shopId = shopRecord[0].id
 
-    // Mark scan as running
-    await db
-      .update(siteScans)
-      .set({ status: 'running' })
-      .where(eq(siteScans.id, scanId))
+    // Use default values for scan settings
+    const maxPages = 1500
+    const concurrency = 4
+
+    // Create site scan record
+    const scanId = crypto.randomUUID()
+    await db.insert(siteScans).values({
+      id: scanId,
+      shopId,
+      status: 'queued',
+      startedAt: new Date(),
+    })
+
+    // Create crawl job
+    await createJob('crawl_site', {
+      shopDomain: shop,
+      scanId,
+      maxPages,
+      concurrency,
+    })
+
+    console.log(`Queued scan for ${shop}: scanId=${scanId}, maxPages=${maxPages}, concurrency=${concurrency}`)
 
     return NextResponse.json({
+      ok: true,
       scanId,
-      message: 'Scan queued successfully',
+      maxPages,
+      concurrency,
     })
+
   } catch (error) {
-    console.error('Error queueing scan:', error)
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Failed to queue scan' 
-    }, { status: 500 })
+    console.error('Queue scan error:', error)
+    return NextResponse.json(
+      { 
+        error: 'Failed to queue scan', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }, 
+      { status: 500 }
+    )
   }
 }

@@ -1,294 +1,280 @@
-# Redirect Watch
+# Redirect Watch - Rolls-Royce Edition 🚀
 
-A **Vercel-ready** Shopify embedded app for real-time 404 tracking, link auditing, and redirect management. Built with **Next.js 15 (App Router) + TypeScript + Polaris** and **Drizzle ORM on Postgres (Supabase)**.
+A premium Shopify embedded app for 404 tracking and redirect management, built with Next.js 15, Polaris, and Drizzle ORM.
 
 ## Features
 
-### Core Functionality
-- **Real-time 404 Tracking**: Capture 404 errors via App Proxy beacon
-- **Advanced Link Audit**: Crawl and analyze your store for broken links, redirect chains, and SEO issues
-- **Smart Redirect Suggestions**: AI-powered suggestions with one-click redirect creation via Shopify Admin GraphQL
-- **Regex Rules Engine**: Pattern-based URL mapping with live simulator
-- **Bulk CSV Import**: DropZone interface for importing redirects in bulk
-- **ROI Dashboard**: Estimated revenue loss calculations and KPI tracking
+### 🎯 **Core Features**
+- **Real-time 404 Capture** - Track broken links via App Proxy
+- **Advanced Link Audit** - Discover broken links, redirect chains, and canonical issues
+- **Smart Auto-fix** - AI-powered suggestions using Jaro-Winkler similarity
+- **Regex Rules Engine** - Pattern-based redirect automation with simulator
+- **Bulk CSV Import** - Mass redirect creation with DropZone
+- **ROI Dashboard** - Revenue impact tracking with charts
+- **Weekly Digests** - Automated email reports
 
-### Advanced Features
-- **Link Issue Detection**: Broken links, redirect chains, loops, canonical mismatches, trailing slashes
-- **Weekly Digest**: Automated email reports with key metrics
-- **Alert System**: Real-time notifications for 404 spikes
-- **Billing Integration**: Pro subscription (€14/month) with 14-day trial
-- **GDPR Compliance**: Full data redaction webhooks
+### 🏗️ **Rolls-Royce Upgrade**
+- **Polite BFS Crawler** - Respectful site scanning (1,500 pages, 4 workers)
+- **Background Job System** - Async processing with retry logic
+- **Advanced Analytics** - Trend charts and KPI tracking
+- **Intelligent Matching** - Jaro-Winkler algorithm for auto-suggestions
+- **Pattern Simulator** - Test regex rules before applying
+- **Onboarding Flow** - Guided setup for new users
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15 (App Router), TypeScript, Shopify Polaris
-- **Backend**: Next.js API Routes, Drizzle ORM
-- **Database**: PostgreSQL (Supabase)
-- **Authentication**: OAuth 2.0 + JWT (jose)
-- **Shopify Integration**: App Bridge v3, Admin GraphQL API
+- **Framework**: Next.js 15 (App Router) + TypeScript
+- **UI**: Shopify Polaris + Chart.js + React Chart.js 2
+- **Database**: PostgreSQL (Supabase) + Drizzle ORM with UUID primary keys
+- **Auth**: OAuth 2.0 + JWT + App Bridge v3
+- **Deployment**: Vercel with cron jobs
 - **Email**: Resend (optional)
-- **Deployment**: Vercel
 
-## Quick Start
+## Environment Variables
 
-### 1. Local Development
+### Required
+```env
+# Shopify App Configuration
+SHOPIFY_API_KEY=your_api_key
+SHOPIFY_API_SECRET=your_api_secret
+SHOPIFY_SCOPES=read_products,write_online_store_navigation,read_content
+SHOPIFY_APP_URL=https://your-app.vercel.app
 
+# Database
+DATABASE_URL=postgresql://user:pass@host:port/db
+
+# JWT
+JWT_SECRET=your_jwt_secret
+
+# Cron Protection
+CRON_SECRET=your_secure_cron_secret
+```
+
+### Optional
+```env
+# Email Alerts (Future Use)
+RESEND_API_KEY=your_resend_key
+ALERTS_TO=admin@yourstore.com,manager@yourstore.com
+
+# Billing
+BILLING_PLAN_NAME=Pro
+BILLING_PRICE_AMOUNT=14.00
+BILLING_CURRENCY=EUR
+BILLING_TRIAL_DAYS=14
+
+# Debug
+DEBUG_KEY=your_debug_key
+```
+
+## Installation & Setup
+
+### 1. Clone & Install
 ```bash
-# Clone and install dependencies
-git clone <your-repo>
+git clone https://github.com/your-username/redirect-watch.git
 cd redirect-watch
 npm install
+```
 
-# Set up environment variables (see .env.local.example)
-cp .env.local.example .env.local
-# Edit .env.local with your credentials
+### 2. Environment Setup
+```bash
+cp .env.example .env.local
+# Edit .env.local with your values
+```
 
-# Push database schema
+### 3. Database Setup
+```bash
+# Push schema to Supabase
 npm run db:push
+```
 
-# Start development server
+### 4. Development
+```bash
 npm run dev
 ```
 
-### 2. GitHub Setup
-
+### 5. Production Deployment
 ```bash
-git init
-git add -A
-git commit -m "init Redirect Watch"
-git branch -M main
-git remote add origin https://github.com/<user>/<repo>.git
-git push -u origin main
+# Deploy to Vercel
+vercel --prod
+
+# Set environment variables in Vercel dashboard
 ```
 
-### 3. Vercel Deployment
+## API Endpoints
 
-1. Import your GitHub repository to Vercel
-2. Framework Preset: **Next.js**
-3. Root Directory: **/** (repository root)
-4. Add all environment variables from `.env.local`
-5. Deploy
-6. Copy the Vercel URL → Update `SHOPIFY_APP_URL` in environment variables → Redeploy
+### Scan Management
+```bash
+# Queue a new scan
+curl -X POST https://your-app.vercel.app/api/scans/queue \
+  -H 'Content-Type: application/json' \
+  -d '{"shop":"your-shop.myshopify.com"}'
 
-#### Optional: Vercel Cron Job
-Add a Vercel Cron job to process crawl jobs:
+# Run pending jobs (cron)
+curl -X POST https://your-app.vercel.app/api/scans/run \
+  -H 'Authorization: Bearer YOUR_CRON_SECRET'
+
+# Check scan status
+curl https://your-app.vercel.app/api/scans/status?shop=your-shop.myshopify.com
+```
+
+### Auto-fix Suggestions
+```bash
+# Preview suggestions
+curl -X POST https://your-app.vercel.app/api/redirects/auto \
+  -H 'Content-Type: application/json' \
+  -d '{"shop":"your-shop.myshopify.com","threshold":0.88,"apply":false}'
+
+# Apply suggestions
+curl -X POST https://your-app.vercel.app/api/redirects/auto \
+  -H 'Content-Type: application/json' \
+  -d '{"shop":"your-shop.myshopify.com","threshold":0.88,"apply":true}'
+```
+
+### Regex Rules Testing
+```bash
+# Test regex patterns
+curl -X POST https://your-app.vercel.app/api/redirect-rules/test \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "path": "/old-product/example",
+    "rules": [{
+      "pattern": "^/old-product/(.+)$",
+      "replacement": "/products/$1",
+      "flags": "g",
+      "enabled": true,
+      "priority": 1
+    }]
+  }'
+```
+
+## Vercel Cron Configuration
+
+Add to `vercel.json`:
 ```json
 {
   "crons": [
     {
       "path": "/api/scans/run",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/scans/run", 
+      "schedule": "0 6 * * *"
     }
   ]
 }
 ```
 
-### 4. Shopify Partner Dashboard
+Or set up in Vercel Dashboard:
+- **Every 5 minutes**: `POST /api/scans/run` with `Authorization: Bearer ${CRON_SECRET}`
+- **Daily at 06:00 UTC**: `POST /api/scans/run` with `Authorization: Bearer ${CRON_SECRET}`
 
-1. **App URL**: `https://<your-vercel-app>.vercel.app/`
-2. **Allowed redirection URLs**: `https://<your-vercel-app>.vercel.app/api/auth/callback`
-3. **App Proxy Settings**:
-   - Subpath prefix: `apps`
-   - Subpath: `redirect-watch`  
-   - Proxy URL: `https://<your-vercel-app>.vercel.app/api/proxy/track`
-4. **App Scopes**: `write_online_store_navigation,read_online_store_navigation,read_products,read_content`
+## Architecture
 
-### 5. Theme Integration
-
-Add this snippet to your theme's `404.liquid` template:
-
-```liquid
-<img alt="" aria-hidden="true" width="1" height="1" style="display:none"
-     src="/apps/redirect-watch/track?path={{ request.path | url_encode }}">
-```
-
-## Environment Variables
-
-```bash
-# Shopify App Credentials
-SHOPIFY_API_KEY=your_api_key
-SHOPIFY_API_SECRET=your_api_secret
-SHOPIFY_SCOPES=write_online_store_navigation,read_online_store_navigation,read_products,read_content
-SHOPIFY_APP_URL=https://your-vercel-app.vercel.app
-SHOPIFY_API_VERSION=2025-07
-
-# Public (exposed to client)
-NEXT_PUBLIC_SHOPIFY_API_KEY=your_api_key
-
-# Security
-ENCRYPTION_KEY=your_32_char_hex_key
-
-# Database
-DATABASE_URL=postgresql://user:pass@host:port/db?sslmode=require
-
-# Billing
-BILLING_CURRENCY=EUR
-BILLING_PLAN_NAME=Pro
-BILLING_PRICE_AMOUNT=14.00
-BILLING_TRIAL_DAYS=14
-BILLING_TEST_MODE=true
-
-# Optional Email (Resend)
-RESEND_API_KEY=your_resend_key
-
-# Environment
-NODE_ENV=development
-LOG_LEVEL=info
-```
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── (embedded)/          # Embedded app routes
-│   │   ├── layout.tsx       # App Bridge + Polaris setup
-│   │   └── page.tsx         # Main dashboard
-│   ├── api/                 # API routes
-│   │   ├── auth/            # OAuth flow
-│   │   ├── billing/         # Subscription management
-│   │   ├── broken-urls/     # 404 tracking
-│   │   ├── imports/         # CSV import status
-│   │   ├── proxy/           # App Proxy tracking
-│   │   ├── redirects/       # Redirect CRUD
-│   │   ├── redirect-rules/  # Regex rules
-│   │   ├── scans/           # Link auditing
-│   │   └── webhooks/        # GDPR compliance
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Install page
-├── components/
-│   ├── Dashboard.tsx        # Main dashboard with tabs
-│   ├── RedirectManagement.tsx  # Redirect & rules UI
-│   └── CSVImport.tsx        # Bulk import interface
-├── lib/
-│   ├── alerts/              # Email & digest system
-│   ├── auth/                # JWT & OAuth helpers
-│   ├── billing/             # Subscription middleware
-│   ├── crawler/             # Link audit engine
-│   ├── db/                  # Drizzle schema & connection
-│   └── shopify/             # Admin GraphQL & proxy
-└── ...
-```
-
-## API Documentation
-
-### Core Endpoints
-
-- `GET /api/broken-urls` - List 404 errors with stats
-- `POST /api/redirects` - Create redirect
-- `DELETE /api/redirects/[id]` - Delete redirect
-- `POST /api/redirects/bulk` - Bulk CSV import
-- `GET /api/redirect-rules` - List regex rules
-- `POST /api/redirect-rules` - Create regex rule
-
-### Scanning System
-
-- `POST /api/scans/queue` - Start link audit
-- `POST /api/scans/run` - Process scan jobs (for cron)
-- `GET /api/scans/[id]/status` - Check scan progress
-
-### Billing & Auth
-
-- `GET /api/billing/check` - Check subscription status
-- `POST /api/billing/subscribe` - Create subscription
-- `GET /api/auth?shop=example.myshopify.com` - Start OAuth
-- `GET /api/auth/callback` - OAuth callback
-
-## Database Schema
-
-### Core Tables
-- `shops` - Store installations
-- `broken_urls` - 404 tracking data
-- `redirects` - Redirect management
-- `imports` - CSV import history
-- `settings` - Per-shop configuration
-- `subscriptions` - Billing information
-
-### Audit System
-- `site_scans` - Scan sessions
+### Database Schema (UUID-based)
+- `shops` - Store information and access tokens
+- `broken_urls` - Captured 404 errors with hit counts
+- `redirects` - Manual and auto-generated redirects
+- `redirect_rules` - Regex patterns for automation
+- `site_scans` - Crawl job status and metadata
 - `scan_pages` - Individual page results
-- `link_issues` - Detected problems
-- `redirect_rules` - Regex patterns
-- `jobs` - Background job queue
-- `alerts` - Notification history
+- `link_issues` - Discovered problems (broken links, redirects)
+- `jobs` - Background task queue
+- `subscriptions` - Billing and trial management
+- `settings` - Per-shop configuration
+- `imports` - CSV upload tracking
+- `alerts` - Email notification log
 
-## Development Notes
+### Job System
+```typescript
+// Queue a crawl job
+await createJob('crawl_site', {
+  shopDomain: 'shop.myshopify.com',
+  scanId: 'uuid',
+  maxPages: 1500,
+  concurrency: 4
+})
 
-### Key Design Decisions
-
-1. **App Bridge v3**: Uses core `createApp()` without React provider for better compatibility
-2. **No GraphQL Client**: Direct fetch to Admin GraphQL for simpler dependency management
-3. **Serverless-Safe Crawling**: Job queue system processes in small chunks
-4. **HMAC Verification**: All App Proxy requests verified with Shopify signature
-5. **Polaris Latest**: Uses `tone` props and `DropZone.FileUpload` pattern
-
-### Security Features
-
-- JWT tokens with `jose` library
-- App Proxy HMAC verification
-- OAuth state parameter validation
-- GDPR webhook signature verification
-- Rate limiting on crawler (5-10 concurrent)
-
-### Performance Optimizations
-
-- Database indexes on frequently queried columns
-- Pagination on large datasets
-- Concurrent job processing with limits
-- Deduplication of crawled URLs
-- Background processing for imports
-
-## Testing
-
-```bash
-# Build check
-npm run build
-
-# Database migration
-npm run db:push
-
-# Test 404 tracking
-curl "https://your-app.vercel.app/api/proxy/track?shop=test.myshopify.com&path=/test-404&signature=..."
+// Process jobs (called by cron)
+await runPendingJobs(15)
 ```
 
-## Deployment Checklist
+### Auto-fix Algorithm
+Uses Jaro-Winkler similarity to match broken URLs with existing redirect targets:
+- **95%+ confidence**: Excellent match
+- **90-94%**: Very good match  
+- **85-89%**: Good match
+- **80-84%**: Fair match
 
-- [ ] Environment variables configured in Vercel
-- [ ] Database schema pushed to production
-- [ ] Shopify App URLs updated with Vercel domain
-- [ ] App Proxy configured correctly
-- [ ] GDPR webhooks endpoints added
-- [ ] Optional: Vercel Cron job configured
-- [ ] Optional: Resend API key for emails
+## User Interface
 
-## Troubleshooting
+### Navigation
+- **Dashboard** - KPIs, trends, and quick actions
+- **Scans** - Site crawl management and history
+- **Rules** - Regex pattern management with simulator
+- **Auto-fix** - AI-powered redirect suggestions
 
-### Common Issues
+### Dashboard Features
+- Real-time 404 counts and resolution rates
+- Estimated ROI calculations (2% conversion, €60 AOV)
+- 14-day trend charts using Chart.js
+- Top 5 broken paths with hit counts
+- One-click scan initiation
 
-1. **"Unexpected token '<'"**: API routes returning HTML instead of JSON
-   - Check authentication headers
-   - Verify environment variables
+### Onboarding Flow
+New users see guided setup:
+1. **Add 404 Tracking** - Theme snippet installation
+2. **Run First Scan** - Discover existing issues
+3. **Create Redirects** - Manual or auto-fix options
 
-2. **App Proxy not working**: 
-   - Verify HMAC signature calculation
-   - Check proxy URL configuration in Partner Dashboard
+## Security
 
-3. **OAuth loop**:
-   - Ensure callback URL matches exactly
-   - Check state parameter validation
+- **OAuth 2.0** with state parameter validation
+- **JWT tokens** for session management
+- **CRON_SECRET** protection for job endpoints
+- **CSP headers** for iframe security
+- **Cookie security** with `sameSite: 'none'`, `secure: true`
 
-4. **Database connection**:
-   - Verify DATABASE_URL format
-   - Check Supabase connection limits
+## Performance
 
-### Debug Mode
+- **Polite Crawling** - 50ms delays between requests
+- **Concurrent Workers** - 4 parallel crawlers maximum
+- **Page Limits** - 1,500 pages per scan
+- **Depth Limits** - Maximum 3 levels deep
+- **Retry Logic** - Exponential backoff for failed jobs
 
-Set `LOG_LEVEL=debug` for verbose logging.
+## Monitoring
+
+### Job Status
+```bash
+# Check job queue
+curl https://your-app.vercel.app/api/debug/db?key=your_debug_key
+```
+
+### Scan Progress
+```bash
+# Real-time scan status
+curl https://your-app.vercel.app/api/scans/status?shop=shop.myshopify.com
+```
+
+## Support & Documentation
+
+- **Setup Guide**: https://help.redirectwatch.com/setup
+- **API Reference**: https://help.redirectwatch.com/api
+- **Troubleshooting**: https://help.redirectwatch.com/troubleshooting
 
 ## License
 
 MIT License - see LICENSE file for details.
 
-## Support
+## Contributing
 
-For issues and feature requests, please use GitHub Issues.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+---
+
+**Redirect Watch** - Turn your 404s into revenue opportunities! 💰

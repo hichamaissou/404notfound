@@ -1,64 +1,118 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSessionFromHeaders } from '@/lib/auth/jwt'
-import { db, redirectRules } from '@/lib/db'
+import { db, shops, redirectRules } from '@/lib/db'
 import { eq, asc } from 'drizzle-orm'
 
+// GET - List all rules for a shop
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSessionFromHeaders(request.headers)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { searchParams } = new URL(request.url)
+    const shop = searchParams.get('shop')
+
+    if (!shop) {
+      return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 })
     }
 
+    // Get shop ID
+    const shopRecord = await db
+      .select({ id: shops.id })
+      .from(shops)
+      .where(eq(shops.shopDomain, shop))
+      .limit(1)
+
+    if (!shopRecord.length) {
+      return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
+    }
+
+    const shopId = shopRecord[0].id
+
+    // Get all rules for this shop
     const rules = await db
-      .select()
+      .select({
+        id: redirectRules.id,
+        pattern: redirectRules.pattern,
+        replacement: redirectRules.replacement,
+        flags: redirectRules.flags,
+        enabled: redirectRules.enabled,
+        priority: redirectRules.priority,
+        createdAt: redirectRules.createdAt,
+        updatedAt: redirectRules.updatedAt,
+      })
       .from(redirectRules)
-      .where(eq(redirectRules.shopId, session.shopId))
-      .orderBy(asc(redirectRules.priority), asc(redirectRules.id))
+      .where(eq(redirectRules.shopId, shopId))
+      .orderBy(asc(redirectRules.priority))
 
     return NextResponse.json({ rules })
+
   } catch (error) {
-    console.error('Error fetching redirect rules:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Get rules error:', error)
+    return NextResponse.json(
+      { 
+        error: 'Failed to get rules', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }, 
+      { status: 500 }
+    )
   }
 }
 
+// POST - Create a new rule
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSessionFromHeaders(request.headers)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const body = await request.json()
+    const { shop, pattern, replacement, flags, enabled = true, priority = 0 } = body
+
+    if (!shop || !pattern || !replacement) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const { pattern, replacement, flags, priority } = await request.json()
+    // Get shop ID
+    const shopRecord = await db
+      .select({ id: shops.id })
+      .from(shops)
+      .where(eq(shops.shopDomain, shop))
+      .limit(1)
 
-    if (!pattern || !replacement) {
-      return NextResponse.json({ error: 'Pattern and replacement are required' }, { status: 400 })
+    if (!shopRecord.length) {
+      return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
     }
 
-    // Validate regex pattern
+    const shopId = shopRecord[0].id
+
+    // Test the regex pattern
     try {
-      new RegExp(pattern, flags || 'i')
-    } catch (error) {
+      new RegExp(pattern, flags || 'g')
+    } catch (regexError) {
       return NextResponse.json({ error: 'Invalid regex pattern' }, { status: 400 })
     }
 
-    const [rule] = await db
-      .insert(redirectRules)
-      .values({
-        shopId: session.shopId,
-        pattern,
-        replacement,
-        flags: flags || 'i',
-        priority: priority || 100,
-      })
-      .returning()
+    // Create rule
+    const ruleId = crypto.randomUUID()
+    await db.insert(redirectRules).values({
+      id: ruleId,
+      shopId,
+      pattern,
+      replacement,
+      flags: flags || null,
+      enabled,
+      priority,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
 
-    return NextResponse.json({ rule })
-  } catch (error) {
-    console.error('Error creating redirect rule:', error)
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Failed to create rule' 
-    }, { status: 500 })
+      success: true, 
+      ruleId,
+      message: 'Rule created successfully' 
+    })
+
+  } catch (error) {
+    console.error('Create rule error:', error)
+    return NextResponse.json(
+      { 
+        error: 'Failed to create rule', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }, 
+      { status: 500 }
+    )
   }
 }
