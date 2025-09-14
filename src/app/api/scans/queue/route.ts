@@ -41,15 +41,16 @@ export async function POST(request: NextRequest) {
     // Create site scan record
     console.log('Creating site scan...')
     
-    const [insertedScan] = await db.insert(siteScans).values({
+    const scanId = crypto.randomUUID()
+    console.log('Using scan ID:', scanId)
+    
+    await db.insert(siteScans).values({
+      id: scanId,
       shopId,
       status: 'queued',
       startedAt: new Date(),
-    }).returning({ id: siteScans.id })
+    })
     
-    const scanId = insertedScan.id
-    console.log('Site scan created with ID:', scanId)
-
     console.log('Site scan created successfully')
 
     // Create crawl job directly (avoiding import issues)
