@@ -2,7 +2,7 @@
 const { spawnSync } = require('node:child_process');
 
 // Skip on Vercel builds or when explicitly disabled
-const isVercel = process.env.VERCEL === '1';
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
 const skip = isVercel || process.env.SKIP_DB_PUSH === '1';
 
 if (skip) {

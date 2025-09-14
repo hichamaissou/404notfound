@@ -3,6 +3,7 @@ import { validateShopDomain, exchangeCodeForToken } from '@/lib/auth/oauth'
 import { createJWT } from '@/lib/auth/jwt'
 import { db, shops, settings, subscriptions } from '@/lib/db'
 import { eq } from 'drizzle-orm'
+import type { InferInsertModel } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -61,16 +62,18 @@ export async function GET(request: NextRequest) {
     const priceAmount = process.env.BILLING_PRICE_AMOUNT ?? '14.00';
     const currency = process.env.BILLING_CURRENCY ?? 'EUR';
 
+    const subscriptionData: InferInsertModel<typeof subscriptions> = {
+      shopId: shopRecord.id,
+      planName,
+      priceAmount,
+      currency,
+      status: 'active', // Start with trial
+      trialEndsAt,
+    }
+
     await db
       .insert(subscriptions)
-      .values({
-        shopId: shopRecord.id,
-        planName,
-        priceAmount,
-        currency,
-        status: 'active', // Start with trial
-        trialEndsAt,
-      })
+      .values(subscriptionData)
       .onConflictDoNothing()
 
     // Create JWT token
