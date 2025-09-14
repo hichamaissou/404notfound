@@ -2,6 +2,7 @@
 import {
   pgTable, uuid, text, timestamp, integer, boolean, jsonb, numeric, index,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /* =========================
    CORE TABLES (alignées Supabase)
@@ -9,13 +10,13 @@ import {
 
 /** shops */
 export const shops = pgTable('shops', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').primaryKey(),
   shopDomain: text('shop_domain').notNull().unique(),
   accessToken: text('access_token').notNull(),
   scope: text('scope').notNull(),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  isActive: boolean('is_active').notNull(),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
 }, (t) => ({
   shopDomainIdx: index('shops_shop_domain_idx').on(t.shopDomain),
 }));

@@ -4,6 +4,7 @@ import { createJWT } from '@/lib/auth/jwt'
 import { db, shops, settings, subscriptions } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import type { InferInsertModel } from 'drizzle-orm'
+import crypto from 'crypto'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -61,12 +62,19 @@ export async function GET(request: NextRequest) {
     
     let shopRecord
     try {
-      [shopRecord] = await db
+      // Generate UUID manually for the insert
+      const shopId: string = crypto.randomUUID()
+      
+      const result = await db
         .insert(shops)
         .values({
+          id: shopId,
           shopDomain: shop,
           accessToken: tokenData.access_token,
           scope: tokenData.scope,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: shops.shopDomain,
@@ -78,6 +86,7 @@ export async function GET(request: NextRequest) {
         })
         .returning()
       
+      shopRecord = result[0]
       console.log('Shop record created/updated:', { id: shopRecord.id, domain: shopRecord.shopDomain })
     } catch (dbError) {
       console.error('Database error details:', {
