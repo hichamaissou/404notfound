@@ -11,23 +11,32 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const state = searchParams.get('state')
 
+  console.log('OAuth callback received:', { shop, code: code ? 'present' : 'missing', state: state ? 'present' : 'missing' })
+
   // Verify state parameter
   const storedState = request.cookies.get('oauth_state')?.value
+  console.log('State verification:', { received: state, stored: storedState })
+  
   if (!state || !storedState || state !== storedState) {
-    return NextResponse.json({ error: 'Invalid state parameter' }, { status: 400 })
+    console.error('State verification failed:', { received: state, stored: storedState })
+    return NextResponse.json({ error: 'Invalid state parameter', debug: { received: state, stored: storedState } }, { status: 400 })
   }
 
   if (!shop || !code) {
-    return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+    console.error('Missing required parameters:', { shop, code: code ? 'present' : 'missing' })
+    return NextResponse.json({ error: 'Missing required parameters', debug: { shop, code: code ? 'present' : 'missing' } }, { status: 400 })
   }
 
   if (!validateShopDomain(shop)) {
-    return NextResponse.json({ error: 'Invalid shop domain' }, { status: 400 })
+    console.error('Invalid shop domain:', shop)
+    return NextResponse.json({ error: 'Invalid shop domain', debug: { shop } }, { status: 400 })
   }
 
   try {
+    console.log('Attempting token exchange for shop:', shop)
     // Exchange code for access token
     const tokenData = await exchangeCodeForToken(shop, code)
+    console.log('Token exchange successful:', { scope: tokenData.scope })
 
     // Store or update shop in database
     const [shopRecord] = await db
@@ -87,6 +96,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(appUrl, request.url))
   } catch (error) {
     console.error('OAuth callback error:', error)
-    return NextResponse.json({ error: 'Authentication failed' }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ 
+      error: 'Authentication failed', 
+      debug: { 
+        message: errorMessage,
+        type: error instanceof Error ? error.constructor.name : typeof error
+      } 
+    }, { status: 500 })
   }
 }
