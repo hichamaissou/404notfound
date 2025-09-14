@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     
     const shopId = shopResult.rows[0].id
 
-    // Get all scans for this shop
+    // Get all scans for this shop using simple query
     const scansResult = await db.execute(sql`
       SELECT id, status, started_at, finished_at, stats, last_error
       FROM site_scans 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       LIMIT 10
     `)
     
-    // Get all jobs
+    // Get all jobs using simple query
     const jobsResult = await db.execute(sql`
       SELECT id, type, status, payload, retries, max_retries, last_error, created_at, updated_at
       FROM jobs
