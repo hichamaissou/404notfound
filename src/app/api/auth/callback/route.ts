@@ -13,13 +13,31 @@ export async function GET(request: NextRequest) {
 
   console.log('OAuth callback received:', { shop, code: code ? 'present' : 'missing', state: state ? 'present' : 'missing' })
 
+  // Log all cookies for debugging
+  const allCookies = request.cookies.getAll()
+  console.log('All cookies received:', allCookies.map(c => ({ name: c.name, value: c.value.substring(0, 10) + '...' })))
+
   // Verify state parameter
   const storedState = request.cookies.get('oauth_state')?.value
-  console.log('State verification:', { received: state, stored: storedState })
+  console.log('State verification:', { 
+    received: state, 
+    stored: storedState,
+    match: state === storedState,
+    receivedLength: state?.length,
+    storedLength: storedState?.length
+  })
   
   if (!state || !storedState || state !== storedState) {
     console.error('State verification failed:', { received: state, stored: storedState })
-    return NextResponse.json({ error: 'Invalid state parameter', debug: { received: state, stored: storedState } }, { status: 400 })
+    return NextResponse.json({ 
+      error: 'Invalid state parameter', 
+      debug: { 
+        received: state, 
+        stored: storedState,
+        cookiesCount: allCookies.length,
+        allCookieNames: allCookies.map(c => c.name)
+      } 
+    }, { status: 400 })
   }
 
   if (!shop || !code) {
