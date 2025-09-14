@@ -94,6 +94,13 @@ export async function GET(request: NextRequest) {
         message: dbError instanceof Error ? dbError.message : 'Unknown DB error',
         stack: dbError instanceof Error ? dbError.stack : undefined
       })
+      
+      // Check if it's a table doesn't exist error
+      const errorMessage = dbError instanceof Error ? dbError.message : ''
+      if (errorMessage.includes('relation "shops" does not exist') || errorMessage.includes('table "shops"')) {
+        throw new Error(`Database table 'shops' does not exist. Please run the migration script or use /api/debug/create-tables to create the required tables.`)
+      }
+      
       throw new Error(`Database operation failed: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`)
     }
 
