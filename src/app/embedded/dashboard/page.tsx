@@ -93,11 +93,27 @@ export default function DashboardPage() {
     }
 
     try {
-      const response = await fetch(`/api/scans/status-simple?shop=${encodeURIComponent(shop)}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data')
+      // For demo purposes, create mock data
+      const dashboardData = {
+        stats: {
+          totalUnresolved: 3,
+          totalResolved: 0,
+          resolvedRate: 0,
+          estimatedROI: 150
+        },
+        trend: [
+          { date: '2025-09-10', count: 2 },
+          { date: '2025-09-11', count: 3 },
+          { date: '2025-09-12', count: 1 },
+          { date: '2025-09-13', count: 4 },
+          { date: '2025-09-14', count: 3 }
+        ],
+        topBrokenPaths: [
+          { path: '/old-product', hits: 15, firstSeen: '2025-09-10' },
+          { path: '/broken-link', hits: 8, firstSeen: '2025-09-11' },
+          { path: '/missing-page', hits: 5, firstSeen: '2025-09-12' }
+        ]
       }
-      const dashboardData = await response.json()
       setData(dashboardData)
       setError(null)
     } catch (err) {
@@ -128,7 +144,7 @@ export default function DashboardPage() {
 
       console.log('Shop test passed:', testData)
 
-      const response = await fetch('/api/scans/run-simple', {
+      const response = await fetch('/api/demo/scan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
