@@ -2,7 +2,9 @@
 
 import { 
   Badge,
+  Banner,
   Button, 
+  ButtonGroup,
   Card, 
   Frame,
   Layout, 
@@ -11,7 +13,7 @@ import {
   Toast} from '@shopify/polaris'
 import { useEffect, useState } from 'react'
 
-import { getShop } from '@/lib/shop/context'
+import { useShopOptional } from '@/ui/hooks/useShop'
 
 interface Scan {
   id: string
@@ -31,7 +33,7 @@ export default function ScansPage() {
   const [toastActive, setToastActive] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  const shop = getShop()
+  const shop = useShopOptional()
 
   const showToast = (message: string) => {
     setToastMessage(message)
@@ -77,6 +79,29 @@ export default function ScansPage() {
     }
   }
 
+  const handleStartScanDev = async () => {
+    if (!shop) return
+
+    try {
+      const response = await fetch('/api/scans/queue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ shop, dev: true }),
+      })
+
+      if (response.ok) {
+        showToast('Scan queued and triggered (dev)')
+        setTimeout(() => fetchScans(), 1000)
+      } else {
+        throw new Error('Failed to queue scan (dev)')
+      }
+    } catch (err) {
+      showToast('Failed to queue scan (dev)')
+    }
+  }
+
   useEffect(() => {
     fetchScans()
   }, [shop])
@@ -114,6 +139,19 @@ export default function ScansPage() {
         }}
       >
         <Layout>
+          {!shop && (
+            <Layout.Section>
+              <Banner tone="critical" title="Missing shop context">
+                <p>We couldn’t detect your shop. Open the app from Shopify admin or add ?shop=your-shop.myshopify.com to the URL.</p>
+              </Banner>
+            </Layout.Section>
+          )}
+          <Layout.Section>
+            <Banner tone="info" title="About scans">
+              <p>A scan visits internal pages to find broken links and redirect chains. It runs in the background.</p>
+              <p style={{ marginTop: 6 }}>In development, you can trigger processing immediately via the ‘Run now (dev)’ option.</p>
+            </Banner>
+          </Layout.Section>
           {loading ? (
             <Layout.Section>
               <Card>
@@ -131,9 +169,10 @@ export default function ScansPage() {
                     <Text as="p" tone="subdued">
                       Start your first site scan to discover broken links and redirect chains.
                     </Text>
-                    <Button variant="primary" onClick={handleStartScan}>
-                      Run First Scan
-                    </Button>
+                    <ButtonGroup>
+                      <Button variant="primary" onClick={handleStartScan}>Run First Scan</Button>
+                      <Button onClick={handleStartScanDev}>Run now (dev)</Button>
+                    </ButtonGroup>
                   </div>
                 </div>
               </Card>
@@ -146,6 +185,12 @@ export default function ScansPage() {
                     <Text as="h3" variant="headingSm">
                       Scan History ({scans.length})
                     </Text>
+                  </div>
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <ButtonGroup>
+                      <Button onClick={handleStartScan}>Start New Scan</Button>
+                      <Button onClick={handleStartScanDev}>Run now (dev)</Button>
+                    </ButtonGroup>
                   </div>
                   <div>
                     {scans.map(scan => (

@@ -1,61 +1,52 @@
-import { eq, sql } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { eq } from 'drizzle-orm'
+import { NextRequest } from 'next/server'
+import { z } from 'zod'
 
-import { db, jobs,shops } from '@/lib/db'
+import { jsonWithRequestId } from '@/core/api/respond'
+import { logger } from '@/core/logger'
+import { db, jobs, shops, siteScans } from '@/lib/db'
+import { runPendingJobs } from '@/lib/jobs/runner'
+
+const BodySchema = z.object({
+  shop: z.string().min(1),
+  dev: z.boolean().optional(),
+})
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Queue scan API called')
-    
-    const body = await request.json()
-    const { shop } = body
-
-    console.log('Request body:', { shop })
-
-    if (!shop) {
-      console.log('Missing shop parameter')
-      return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 })
+    const parsed = BodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return jsonWithRequestId({ ok: false, error: 'Invalid body', issues: parsed.error.flatten() }, { status: 400 })
     }
+    const { shop, dev } = parsed.data
 
     // Validate shop exists
-    console.log('Validating shop:', shop)
     const shopRecord = await db
       .select({ id: shops.id })
       .from(shops)
       .where(eq(shops.shopDomain, shop))
       .limit(1)
 
-    console.log('Shop record found:', shopRecord)
-
     if (!shopRecord.length) {
-      console.log('Shop not found in database')
-      return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
+      return jsonWithRequestId({ ok: false, error: 'Shop not found' }, { status: 404 })
     }
 
     const shopId = shopRecord[0].id
-    console.log('Shop ID:', shopId)
-
-    // Use default values for scan settings
     const maxPages = 1500
     const concurrency = 4
 
-    // Create site scan record using raw SQL to avoid Drizzle issues
-    console.log('Creating site scan...')
-    
     const scanId = crypto.randomUUID()
-    console.log('Using scan ID:', scanId)
-    
-    await db.execute(sql`
-      INSERT INTO site_scans (id, shop_id, status, started_at)
-      VALUES (${scanId}, ${shopId}, 'queued', ${new Date().toISOString()})
-    `)
-    
-    console.log('Site scan created successfully')
+    await db.insert(siteScans).values({
+      id: scanId,
+      shopId,
+      status: 'queued',
+      startedAt: new Date(),
+      seeds: [{ url: `https://${shop}` }],
+      stats: {},
+    })
 
     // Create crawl job directly (avoiding import issues)
     const jobId = crypto.randomUUID()
-    console.log('Creating job with ID:', jobId)
-    
     await db.insert(jobs).values({
       id: jobId,
       type: 'crawl_site',
@@ -72,40 +63,28 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
       updatedAt: new Date(),
     })
-
-    console.log('Job created successfully')
-
-    // Immediately try to run the job (for immediate execution)
-    try {
-      console.log('Attempting to run job immediately...')
-      const { runPendingJobs } = await import('@/lib/jobs/runner')
-      const jobResult = await runPendingJobs(1)
-      console.log('Immediate job execution result:', jobResult)
-    } catch (jobError) {
-      console.error('Immediate job execution failed:', jobError)
-      // Don't fail the scan creation if job execution fails
+    // In development mode, allow immediate processing when dev flag provided
+    if (process.env.NODE_ENV === 'development' && dev === true) {
+      try {
+        const result = await runPendingJobs(1)
+        logger.info('Dev immediate job run', { scanId, jobId, processed: result.processed })
+      } catch (e) {
+        logger.warn('Dev immediate job run failed', { scanId, jobId, error: e instanceof Error ? e.message : String(e) })
+      }
     }
 
-    console.log(`Queued scan for ${shop}: scanId=${scanId}, jobId=${jobId}, maxPages=${maxPages}, concurrency=${concurrency}`)
+    logger.info('Queued scan', { shop, shopId, scanId, jobId, maxPages, concurrency })
 
-    return NextResponse.json({
-      ok: true,
-      scanId,
-      jobId,
-      maxPages,
-      concurrency,
-    })
+    return jsonWithRequestId({ ok: true, scanId, jobId, maxPages, concurrency })
 
   } catch (error) {
     console.error('Queue scan error:', error)
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack')
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to queue scan', 
+    return jsonWithRequestId(
+      {
+        ok: false,
+        error: 'Failed to queue scan',
         details: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }, 
+      },
       { status: 500 }
     )
   }

@@ -2,7 +2,9 @@
 
 import { 
   Badge,
+  Banner,
   Button, 
+  ButtonGroup,
   Card, 
   Frame,
   Layout, 
@@ -12,7 +14,7 @@ import {
   Toast} from '@shopify/polaris'
 import { useState } from 'react'
 
-import { getShop } from '@/lib/shop/context'
+import { useShopOptional } from '@/ui/hooks/useShop'
 
 interface Suggestion {
   from: string
@@ -27,7 +29,7 @@ export default function AutoFixPage() {
   const [toastActive, setToastActive] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  const shop = getShop()
+  const shop = useShopOptional()
 
   const showToast = (message: string) => {
     setToastMessage(message)
@@ -73,6 +75,25 @@ export default function AutoFixPage() {
     }
   }
 
+  const handleApplySuggestions = async () => {
+    if (!shop || suggestions.length === 0) return
+    setLoading(true)
+    try {
+      const response = await fetch('/api/redirects/auto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shop, threshold: threshold / 100, apply: true }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to apply suggestions')
+      showToast(`Applied ${data.appliedCount} redirects`)
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Failed to apply suggestions')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const toastMarkup = toastActive ? (
     <Toast
       content={toastMessage}
@@ -87,6 +108,19 @@ export default function AutoFixPage() {
         backAction={{ url: '/embedded/dashboard' }}
       >
         <Layout>
+          {!shop && (
+            <Layout.Section>
+              <Banner tone="critical" title="Missing shop context">
+                <p>We couldn’t detect your shop. Open the app from Shopify admin or add ?shop=your-shop.myshopify.com to the URL.</p>
+              </Banner>
+            </Layout.Section>
+          )}
+          <Layout.Section>
+            <Banner tone="info" title="How auto-fix works">
+              <p>Suggestions use fuzzy matching (Jaro‑Winkler). Start with threshold 0.88. Preview before applying to avoid false positives.</p>
+            </Banner>
+          </Layout.Section>
+
           <Layout.Section>
             <Card>
               <div style={{ padding: '1rem' }}>
@@ -105,13 +139,18 @@ export default function AutoFixPage() {
                   <Text as="p" variant="bodySm" tone="subdued">
                     Higher thresholds mean more confident matches but fewer suggestions.
                   </Text>
-                  <Button 
-                    variant="primary" 
-                    onClick={handlePreviewSuggestions}
-                    loading={loading}
-                  >
-                    Preview Suggestions
-                  </Button>
+                  <ButtonGroup>
+                    <Button 
+                      variant="primary" 
+                      onClick={handlePreviewSuggestions}
+                      loading={loading}
+                    >
+                      Preview Suggestions
+                    </Button>
+                    <Button onClick={handleApplySuggestions} disabled={suggestions.length === 0} loading={loading}>
+                      Apply selected
+                    </Button>
+                  </ButtonGroup>
                 </div>
               </div>
             </Card>
@@ -145,18 +184,7 @@ export default function AutoFixPage() {
             </Layout.Section>
           )}
 
-          <Layout.Section>
-            <Card>
-              <div style={{ padding: '1rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <Text as="h3" variant="headingSm">How Auto-fix Works</Text>
-                  <Text as="p" variant="bodySm" tone="subdued">
-                    Auto-fix uses the Jaro-Winkler algorithm to find the most similar paths among your existing redirects.
-                  </Text>
-                </div>
-              </div>
-            </Card>
-          </Layout.Section>
+          
         </Layout>
       </Page>
       {toastMarkup}

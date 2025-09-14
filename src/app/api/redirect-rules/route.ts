@@ -1,17 +1,21 @@
-import { asc,eq } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { asc, eq } from 'drizzle-orm'
+import { NextRequest } from 'next/server'
+import { z } from 'zod'
 
-import { db, redirectRules,shops } from '@/lib/db'
+import { jsonWithRequestId } from '@/core/api/respond'
+import { db, redirectRules, shops } from '@/lib/db'
 
 // GET - List all rules for a shop
+const QuerySchema = z.object({ shop: z.string().min(1) })
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const shop = searchParams.get('shop')
-
-    if (!shop) {
-      return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 })
+    const parsed = QuerySchema.safeParse({ shop: searchParams.get('shop') })
+    if (!parsed.success) {
+      return jsonWithRequestId({ ok: false, error: 'Missing shop parameter' }, { status: 400 })
     }
+    const { shop } = parsed.data
 
     // Get shop ID
     const shopRecord = await db
@@ -21,7 +25,7 @@ export async function GET(request: NextRequest) {
       .limit(1)
 
     if (!shopRecord.length) {
-      return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
+      return jsonWithRequestId({ ok: false, error: 'Shop not found' }, { status: 404 })
     }
 
     const shopId = shopRecord[0].id
@@ -42,15 +46,12 @@ export async function GET(request: NextRequest) {
       .where(eq(redirectRules.shopId, shopId))
       .orderBy(asc(redirectRules.priority))
 
-    return NextResponse.json({ rules })
+    return jsonWithRequestId({ rules })
 
   } catch (error) {
     console.error('Get rules error:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to get rules', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      }, 
+    return jsonWithRequestId(
+      { ok: false, error: 'Failed to get rules', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
@@ -59,12 +60,19 @@ export async function GET(request: NextRequest) {
 // POST - Create a new rule
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { shop, pattern, replacement, flags, enabled = true, priority = 0 } = body
-
-    if (!shop || !pattern || !replacement) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const BodySchema = z.object({
+      shop: z.string().min(1),
+      pattern: z.string().min(1),
+      replacement: z.string().min(1),
+      flags: z.string().optional(),
+      enabled: z.boolean().optional(),
+      priority: z.number().int().optional(),
+    })
+    const parsed = BodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return jsonWithRequestId({ ok: false, error: 'Invalid body', issues: parsed.error.flatten() }, { status: 400 })
     }
+    const { shop, pattern, replacement, flags, enabled = true, priority = 0 } = parsed.data
 
     // Get shop ID
     const shopRecord = await db
@@ -74,16 +82,17 @@ export async function POST(request: NextRequest) {
       .limit(1)
 
     if (!shopRecord.length) {
-      return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
+      return jsonWithRequestId({ ok: false, error: 'Shop not found' }, { status: 404 })
     }
 
     const shopId = shopRecord[0].id
 
     // Test the regex pattern
     try {
+      // eslint-disable-next-line no-new
       new RegExp(pattern, flags || 'g')
-    } catch (regexError) {
-      return NextResponse.json({ error: 'Invalid regex pattern' }, { status: 400 })
+    } catch {
+      return jsonWithRequestId({ ok: false, error: 'Invalid regex pattern' }, { status: 400 })
     }
 
     // Create rule
@@ -100,19 +109,12 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     })
 
-    return NextResponse.json({ 
-      success: true, 
-      ruleId,
-      message: 'Rule created successfully' 
-    })
+    return jsonWithRequestId({ ok: true, ruleId })
 
   } catch (error) {
     console.error('Create rule error:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to create rule', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      }, 
+    return jsonWithRequestId(
+      { ok: false, error: 'Failed to create rule', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

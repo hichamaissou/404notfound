@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { z } from 'zod'
 
+import { jsonWithRequestId } from '@/core/api/respond'
 import { applyRules, type RedirectRule } from '@/lib/rules/redirectRules'
 
 interface TestRequest {
@@ -15,16 +17,23 @@ interface TestRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    const body: TestRequest = await request.json()
-    const { path, rules } = body
-
-    if (!path) {
-      return NextResponse.json({ error: 'Missing path parameter' }, { status: 400 })
+    const Schema = z.object({
+      path: z.string().min(1),
+      rules: z.array(
+        z.object({
+          pattern: z.string().min(1),
+          replacement: z.string().min(1),
+          flags: z.string().optional(),
+          enabled: z.boolean(),
+          priority: z.number().int(),
+        })
+      ),
+    })
+    const parsed = Schema.safeParse(await request.json())
+    if (!parsed.success) {
+      return jsonWithRequestId({ ok: false, error: 'Invalid body', issues: parsed.error.flatten() }, { status: 400 })
     }
-
-    if (!rules || !Array.isArray(rules)) {
-      return NextResponse.json({ error: 'Missing or invalid rules array' }, { status: 400 })
-    }
+    const { path, rules } = parsed.data
 
     // Convert rules to the expected format
     const redirectRules: RedirectRule[] = rules.map((rule, index) => ({
@@ -39,20 +48,12 @@ export async function POST(request: NextRequest) {
     // Apply rules to the path
     const result = applyRules(path, redirectRules)
 
-    return NextResponse.json({
-      result,
-      matched: result !== null,
-      original: path,
-      transformed: result || path,
-    })
+    return jsonWithRequestId({ result, matched: result !== null, original: path, transformed: result || path })
 
   } catch (error) {
     console.error('Rule test error:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to test rules', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      }, 
+    return jsonWithRequestId(
+      { ok: false, error: 'Failed to test rules', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

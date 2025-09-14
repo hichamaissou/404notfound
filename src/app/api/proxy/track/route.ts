@@ -1,8 +1,9 @@
 import { eq, sql } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
-import { brokenUrls,db, shops } from '@/lib/db'
-import { extractShopFromQuery,verifyAppProxySignature } from '@/lib/shopify/proxy'
+import { jsonWithRequestId } from '@/core/api/respond'
+import { brokenUrls, db, shops } from '@/lib/db'
+import { extractShopFromQuery, verifyAppProxySignature } from '@/lib/shopify/proxy'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -13,8 +14,9 @@ export async function GET(request: NextRequest) {
     query[key] = value
   }
 
-  // Verify App Proxy signature
-  if (!verifyAppProxySignature(query)) {
+  // Verify App Proxy signature. In development, allow missing/invalid HMAC.
+  const isValid = verifyAppProxySignature(query)
+  if (!isValid && process.env.NODE_ENV !== 'development') {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
@@ -88,4 +90,3 @@ export async function GET(request: NextRequest) {
     })
   }
 }
-

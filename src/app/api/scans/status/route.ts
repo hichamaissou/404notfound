@@ -1,16 +1,20 @@
-import { and,desc, eq, sql } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { and, desc, eq, sql } from 'drizzle-orm'
+import { NextRequest } from 'next/server'
+import { z } from 'zod'
 
-import { db, linkIssues,scanPages, shops, siteScans } from '@/lib/db'
+import { jsonWithRequestId } from '@/core/api/respond'
+import { db, linkIssues, scanPages, shops, siteScans } from '@/lib/db'
+
+const QuerySchema = z.object({ shop: z.string().min(1) })
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const shop = searchParams.get('shop')
-
-    if (!shop) {
-      return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 })
+    const parsed = QuerySchema.safeParse({ shop: searchParams.get('shop') })
+    if (!parsed.success) {
+      return jsonWithRequestId({ ok: false, error: 'Missing shop parameter' }, { status: 400 })
     }
+    const { shop } = parsed.data
 
     // Get shop ID
     const shopRecord = await db
@@ -20,7 +24,7 @@ export async function GET(request: NextRequest) {
       .limit(1)
 
     if (!shopRecord.length) {
-      return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
+      return jsonWithRequestId({ ok: false, error: 'Shop not found' }, { status: 404 })
     }
 
     const shopId = shopRecord[0].id
@@ -41,19 +45,19 @@ export async function GET(request: NextRequest) {
       .limit(5)
 
     // Get summary for the latest scan if exists
-    let summary = null
+    let summary: { pages: number; broken: number; chains: number } | null = null
     if (scans.length > 0) {
       const latestScanId = scans[0].id
 
       // Count pages scanned
       const pagesCount = await db
-        .select({ count: sql<number>`count(*)` })
+        .select({ count: sql`count(*)` })
         .from(scanPages)
         .where(eq(scanPages.scanId, latestScanId))
 
       // Count broken links
       const brokenLinksCount = await db
-        .select({ count: sql<number>`count(*)` })
+        .select({ count: sql`count(*)` })
         .from(linkIssues)
         .where(
           and(
@@ -64,7 +68,7 @@ export async function GET(request: NextRequest) {
 
       // Count redirect chains
       const redirectChainsCount = await db
-        .select({ count: sql<number>`count(*)` })
+        .select({ count: sql`count(*)` })
         .from(linkIssues)
         .where(
           and(
@@ -74,14 +78,13 @@ export async function GET(request: NextRequest) {
         )
 
       summary = {
-        scanId: latestScanId,
-        pages: pagesCount[0]?.count || 0,
-        brokenLinks: brokenLinksCount[0]?.count || 0,
-        redirectChains: redirectChainsCount[0]?.count || 0,
+        pages: parseInt(String(pagesCount[0]?.count || 0), 10),
+        broken: parseInt(String(brokenLinksCount[0]?.count || 0), 10),
+        chains: parseInt(String(redirectChainsCount[0]?.count || 0), 10),
       }
     }
 
-    return NextResponse.json({
+    return jsonWithRequestId({
       scans: scans.map(scan => ({
         id: scan.id,
         status: scan.status,
@@ -95,11 +98,8 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Scan status error:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to get scan status', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      }, 
+    return jsonWithRequestId(
+      { ok: false, error: 'Failed to get scan status', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

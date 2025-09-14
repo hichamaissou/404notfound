@@ -4,6 +4,7 @@ import {
   Badge,
   Banner,
   Button, 
+  ButtonGroup,
   Card, 
   Frame,
   Layout, 
@@ -13,7 +14,7 @@ import {
   Toast} from '@shopify/polaris'
 import { useEffect, useState } from 'react'
 
-import { getShop } from '@/lib/shop/context'
+import { useShopOptional } from '@/ui/hooks/useShop'
 
 interface RedirectRule {
   id: string
@@ -33,8 +34,12 @@ export default function RulesPage() {
   const [toastMessage, setToastMessage] = useState('')
   const [testPath, setTestPath] = useState('')
   const [testResult, setTestResult] = useState<any>(null)
+  const [newPattern, setNewPattern] = useState('')
+  const [newReplacement, setNewReplacement] = useState('')
+  const [newFlags, setNewFlags] = useState('g')
+  const [newPriority, setNewPriority] = useState<string>('100')
 
-  const shop = getShop()
+  const shop = useShopOptional()
 
   const showToast = (message: string) => {
     setToastMessage(message)
@@ -54,6 +59,52 @@ export default function RulesPage() {
       showToast('Failed to fetch rules')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCreateRule = async () => {
+    if (!shop || !newPattern || !newReplacement) return
+
+    try {
+      const res = await fetch('/api/redirect-rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shop,
+          pattern: newPattern,
+          replacement: newReplacement,
+          flags: newFlags || undefined,
+          enabled: true,
+          priority: parseInt(newPriority, 10) || 100,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to create rule')
+      setNewPattern('')
+      setNewReplacement('')
+      setNewFlags('g')
+      setNewPriority('100')
+      showToast('Rule created')
+      fetchRules()
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Failed to create rule')
+    }
+  }
+
+  const handleDeleteRule = async (id: string) => {
+    if (!shop) return
+    try {
+      const res = await fetch(`/api/redirect-rules/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shop }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete rule')
+      showToast('Rule deleted')
+      fetchRules()
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Failed to delete rule')
     }
   }
 
@@ -105,6 +156,38 @@ export default function RulesPage() {
         backAction={{ url: '/embedded/dashboard' }}
       >
         <Layout>
+          {!shop && (
+            <Layout.Section>
+              <Banner tone="critical" title="Missing shop context">
+                <p>We couldn’t detect your shop. Open the app from Shopify admin or add ?shop=your-shop.myshopify.com to the URL.</p>
+              </Banner>
+            </Layout.Section>
+          )}
+          <Layout.Section>
+            <Banner tone="info" title="Regex rule examples">
+              <p>Examples:</p>
+              <p>^/collections/(.*)-old$ → /collections/$1</p>
+              <p>^/products/(.*)-v2$ → /products/$1</p>
+              <p>^/blog/(.*)/old$ → /blog/$1</p>
+            </Banner>
+          </Layout.Section>
+
+          <Layout.Section>
+            <Card>
+              <div style={{ padding: '1rem' }}>
+                <Text as="h3" variant="headingSm">Create Rule</Text>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px 120px auto', gap: '0.75rem', marginTop: '0.75rem' }}>
+                  <TextField label="Pattern" value={newPattern} onChange={setNewPattern} autoComplete="off" />
+                  <TextField label="Replacement" value={newReplacement} onChange={setNewReplacement} autoComplete="off" />
+                  <TextField label="Flags" value={newFlags} onChange={setNewFlags} autoComplete="off" />
+                  <TextField label="Priority" type="number" value={newPriority} onChange={(v) => setNewPriority(String(v)) } autoComplete="off" />
+                  <div style={{ display: 'flex', alignItems: 'end' }}>
+                    <Button variant="primary" onClick={handleCreateRule} disabled={!newPattern || !newReplacement}>Create</Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </Layout.Section>
           <Layout.Section>
             <Card>
               <div style={{ padding: '1rem' }}>
@@ -180,9 +263,12 @@ export default function RulesPage() {
                               Priority: {rule.priority} | Flags: {rule.flags || 'g'}
                             </Text>
                           </div>
-                          <Badge tone={rule.enabled ? 'success' : undefined}>
-                            {rule.enabled ? 'Enabled' : 'Disabled'}
-                          </Badge>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Badge tone={rule.enabled ? 'success' : undefined}>
+                              {rule.enabled ? 'Enabled' : 'Disabled'}
+                            </Badge>
+                            <Button tone="critical" onClick={() => handleDeleteRule(rule.id)}>Delete</Button>
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -2,6 +2,7 @@
 
 import { 
   Badge,
+  Banner,
   Button, 
   ButtonGroup,
   Card, 
@@ -25,7 +26,7 @@ import {
 import { useEffect, useState } from 'react'
 import { Bar,Line } from 'react-chartjs-2'
 
-import { getShop } from '@/lib/shop/context'
+import { useShopOptional } from '@/ui/hooks/useShop'
 
 ChartJS.register(
   CategoryScale,
@@ -38,28 +39,11 @@ ChartJS.register(
   Legend
 )
 
-interface DashboardStats {
-  totalUnresolved: number
-  totalResolved: number
-  resolvedRate: number
-  estimatedROI: number
-}
-
-interface TrendData {
-  date: string
-  count: number
-}
-
-interface BrokenPath {
-  path: string
-  hits: number
-  firstSeen: string
-}
-
 interface DashboardData {
-  stats: DashboardStats
-  trend: TrendData[]
-  topBrokenPaths: BrokenPath[]
+  stats: { total: number; resolved: number; unresolved: number; estimatedRoi: number }
+  recent: { path: string; hits: number; lastSeen: string }[]
+  trend: { date: string; hits: number }[]
+  top: { path: string; hits: number }[]
 }
 
 export default function DashboardPage() {
@@ -69,7 +53,7 @@ export default function DashboardPage() {
   const [toastActive, setToastActive] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  const shop = getShop()
+  const shop = useShopOptional()
 
   const showToast = (message: string) => {
     setToastMessage(message)
@@ -93,27 +77,12 @@ export default function DashboardPage() {
     }
 
     try {
-      // For demo purposes, create mock data
-      const dashboardData = {
-        stats: {
-          totalUnresolved: 3,
-          totalResolved: 0,
-          resolvedRate: 0,
-          estimatedROI: 150
-        },
-        trend: [
-          { date: '2025-09-10', count: 2 },
-          { date: '2025-09-11', count: 3 },
-          { date: '2025-09-12', count: 1 },
-          { date: '2025-09-13', count: 4 },
-          { date: '2025-09-14', count: 3 }
-        ],
-        topBrokenPaths: [
-          { path: '/old-product', hits: 15, firstSeen: '2025-09-10' },
-          { path: '/broken-link', hits: 8, firstSeen: '2025-09-11' },
-          { path: '/missing-page', hits: 5, firstSeen: '2025-09-12' }
-        ]
+      const res = await fetch(`/api/dashboard?shop=${encodeURIComponent(shop)}`)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error || 'Failed to load dashboard')
       }
+      const dashboardData = await res.json()
       setData(dashboardData)
       setError(null)
     } catch (err) {
@@ -130,21 +99,7 @@ export default function DashboardPage() {
     }
 
     try {
-      console.log('Starting scan for shop:', shop)
-      
-      // First test if shop exists
-      const testResponse = await fetch(`/api/debug/scan-test?shop=${encodeURIComponent(shop)}`)
-      const testData = await testResponse.json()
-      
-      if (!testResponse.ok) {
-        console.error('Shop test failed:', testData)
-        showToast(`Shop test failed: ${testData.error}`)
-        return
-      }
-
-      console.log('Shop test passed:', testData)
-
-      const response = await fetch('/api/demo/scan', {
+      const response = await fetch('/api/scans/queue', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,6 +150,10 @@ export default function DashboardPage() {
           <Layout.Section>
             <Card>
               <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <Banner tone="critical" title="Missing shop context">
+                  <p>We couldn’t detect your shop. Open the app from Shopify admin or add ?shop=your-shop.myshopify.com to the URL.</p>
+                </Banner>
+                <div style={{ height: 12 }} />
                 <Text as="p" tone="critical">Error: {error || 'No data available'}</Text>
                 <div style={{ marginTop: '1rem' }}>
                   <Button onClick={fetchDashboardData}>Retry</Button>
@@ -207,7 +166,7 @@ export default function DashboardPage() {
     )
   }
 
-  const { stats, trend, topBrokenPaths } = data
+  const { stats, trend, top } = data
 
   // Chart data for trend
   const trendChartData = {
@@ -215,7 +174,7 @@ export default function DashboardPage() {
     datasets: [
       {
         label: '404 Errors',
-        data: trend.map(d => d.count),
+        data: trend.map(d => d.hits),
         borderColor: 'rgb(99, 102, 241)',
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
         tension: 0.1,
@@ -225,11 +184,11 @@ export default function DashboardPage() {
 
   // Chart data for top broken paths
   const topPathsChartData = {
-    labels: topBrokenPaths.map(p => p.path.length > 20 ? `${p.path.substring(0, 20)  }...` : p.path),
+    labels: top.map(p => p.path.length > 20 ? `${p.path.substring(0, 20)}...` : p.path),
     datasets: [
       {
         label: 'Hits',
-        data: topBrokenPaths.map(p => p.hits),
+        data: top.map(p => p.hits),
         backgroundColor: 'rgba(239, 68, 68, 0.8)',
       },
     ],
@@ -251,10 +210,10 @@ export default function DashboardPage() {
   }
 
   // Data table for top broken paths
-  const tableRows = topBrokenPaths.map(path => [
+  const tableRows = data.recent.map(path => [
     path.path,
-    path.hits.toString(),
-    new Date(path.firstSeen).toLocaleDateString(),
+    String(path.hits),
+    new Date(path.lastSeen).toLocaleDateString(),
   ])
 
   const toastMarkup = toastActive ? (
@@ -264,7 +223,7 @@ export default function DashboardPage() {
     />
   ) : null
 
-  const showOnboarding = stats.totalUnresolved === 0 && stats.totalResolved === 0
+  const showOnboarding = stats.unresolved === 0 && stats.resolved === 0
 
   return (
     <Frame>
@@ -276,6 +235,11 @@ export default function DashboardPage() {
         }}
       >
         <Layout>
+          <Layout.Section>
+            <Banner tone="info" title="Why fix 404s?">
+              <p>404s are dead ends for customers and search engines. Fixing them boosts SEO, improves UX, and recovers revenue.</p>
+            </Banner>
+          </Layout.Section>
           {/* Onboarding */}
           {showOnboarding && (
             <Layout.Section>
@@ -344,9 +308,9 @@ export default function DashboardPage() {
                 <div style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <Text as="h3" variant="headingSm">Total 404s</Text>
-                    <Text as="p" variant="headingLg">{stats.totalUnresolved}</Text>
-                    <Badge tone={stats.totalUnresolved > 0 ? 'attention' : 'success'}>
-                      {stats.totalUnresolved > 0 ? 'Needs attention' : 'All resolved'}
+                    <Text as="p" variant="headingLg">{stats.unresolved}</Text>
+                    <Badge tone={stats.unresolved > 0 ? 'attention' : 'success'}>
+                      {stats.unresolved > 0 ? 'Needs attention' : 'All resolved'}
                     </Badge>
                   </div>
                 </div>
@@ -355,10 +319,10 @@ export default function DashboardPage() {
               <Card>
                 <div style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <Text as="h3" variant="headingSm">Resolved Rate</Text>
-                    <Text as="p" variant="headingLg">{stats.resolvedRate.toFixed(1)}%</Text>
-                    <Badge tone={stats.resolvedRate > 80 ? 'success' : stats.resolvedRate > 50 ? 'attention' : 'critical'}>
-                      {stats.resolvedRate > 80 ? 'Excellent' : stats.resolvedRate > 50 ? 'Good' : 'Needs work'}
+                    <Text as="h3" variant="headingSm">Resolved</Text>
+                    <Text as="p" variant="headingLg">{stats.resolved}</Text>
+                    <Badge tone={stats.resolved > 0 ? 'success' : 'attention'}>
+                      {stats.resolved > 0 ? 'Getting better' : 'Start fixing'}
                     </Badge>
                   </div>
                 </div>
@@ -368,7 +332,7 @@ export default function DashboardPage() {
                 <div style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <Text as="h3" variant="headingSm">Estimated ROI</Text>
-                    <Text as="p" variant="headingLg">€{stats.estimatedROI.toLocaleString()}</Text>
+                    <Text as="p" variant="headingLg">€{stats.estimatedRoi.toLocaleString()}</Text>
                     <Badge tone="info">Revenue recovered</Badge>
                   </div>
                 </div>
@@ -377,8 +341,8 @@ export default function DashboardPage() {
               <Card>
                 <div style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <Text as="h3" variant="headingSm">Total Resolved</Text>
-                    <Text as="p" variant="headingLg">{stats.totalResolved}</Text>
+                    <Text as="h3" variant="headingSm">Total 404s</Text>
+                    <Text as="p" variant="headingLg">{stats.total}</Text>
                     <Badge tone="success">Fixed</Badge>
                   </div>
                 </div>
@@ -433,19 +397,19 @@ export default function DashboardPage() {
             </Card>
           </Layout.Section>
 
-          {/* Top Broken Paths Table */}
-          {topBrokenPaths.length > 0 && (
+          {/* Recent Broken Paths Table */}
+          {data.recent.length > 0 && (
             <Layout.Section>
               <Card>
                 <div style={{ padding: '1rem' }}>
                   <div style={{ marginBottom: '1rem' }}>
                     <Text as="h3" variant="headingSm">
-                      Top Broken Paths Details
+                      Recent Broken Paths
                     </Text>
                   </div>
                   <DataTable
                     columnContentTypes={['text', 'numeric', 'text']}
-                    headings={['Path', 'Hits', 'First Seen']}
+                    headings={['Path', 'Hits', 'Last Seen']}
                     rows={tableRows}
                   />
                 </div>

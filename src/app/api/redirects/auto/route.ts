@@ -1,14 +1,10 @@
-import { and,eq } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { and, desc, eq } from 'drizzle-orm'
+import { NextRequest } from 'next/server'
+import { z } from 'zod'
 
 import { pathSimilarity } from '@/lib/algorithms/jaroWinkler'
-import { brokenUrls, db, redirects,shops } from '@/lib/db'
-
-interface AutoFixRequest {
-  shop: string
-  threshold?: number
-  apply?: boolean
-}
+import { jsonWithRequestId } from '@/core/api/respond'
+import { brokenUrls, db, redirects, scanPages, shops, siteScans } from '@/lib/db'
 
 interface Suggestion {
   from: string
@@ -18,12 +14,16 @@ interface Suggestion {
 
 export async function POST(request: NextRequest) {
   try {
-    const body: AutoFixRequest = await request.json()
-    const { shop, threshold = 0.88, apply = false } = body
-
-    if (!shop) {
-      return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 })
+    const Schema = z.object({
+      shop: z.string().min(1),
+      threshold: z.number().min(0.5).max(1).optional(),
+      apply: z.boolean().optional(),
+    })
+    const parsed = Schema.safeParse(await request.json())
+    if (!parsed.success) {
+      return jsonWithRequestId({ ok: false, error: 'Invalid body', issues: parsed.error.flatten() }, { status: 400 })
     }
+    const { shop, threshold = 0.88, apply = false } = parsed.data
 
     // Validate shop exists
     const shopRecord = await db
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
 
     if (!shopRecord.length) {
-      return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
+      return jsonWithRequestId({ ok: false, error: 'Shop not found' }, { status: 404 })
     }
 
     const shopId = shopRecord[0].id
@@ -61,11 +61,39 @@ export async function POST(request: NextRequest) {
       .from(redirects)
       .where(eq(redirects.shopId, shopId))
 
-    const candidates = existingRedirects.map(r => r.toPath)
+    const candidates = new Set<string>(existingRedirects.map(r => r.toPath))
+
+    // Include candidates from latest finished scan OK pages (HTML or 2xx)
+    const [latestDoneScan] = await db
+      .select({ id: siteScans.id })
+      .from(siteScans)
+      .where(and(eq(siteScans.shopId, shopId), eq(siteScans.status, 'done')))
+      .orderBy(desc(siteScans.startedAt))
+      .limit(1)
+
+    if (latestDoneScan) {
+      const okPages = await db
+        .select({ url: scanPages.url, status: scanPages.statusCode, contentType: scanPages.contentType })
+        .from(scanPages)
+        .where(eq(scanPages.scanId, latestDoneScan.id))
+
+      for (const p of okPages) {
+        const isOk = (p.status ?? 0) >= 200 && (p.status ?? 0) < 300
+        const isHtml = p.contentType?.includes('text/html')
+        if (isOk || isHtml) {
+          try {
+            const u = new URL(p.url)
+            candidates.add(u.pathname)
+          } catch {
+            // ignore invalid
+          }
+        }
+      }
+    }
     
     // Add some common paths as candidates if we don't have many
-    if (candidates.length < 10) {
-      candidates.push(
+    if (candidates.size < 10) {
+      ;[
         '/',
         '/products',
         '/collections',
@@ -74,7 +102,7 @@ export async function POST(request: NextRequest) {
         '/blogs/news',
         '/cart',
         '/search'
-      )
+      ].forEach((c) => candidates.add(c))
     }
 
     const suggestions: Suggestion[] = []
@@ -142,23 +170,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`Auto-fix for ${shop}: ${suggestions.length} suggestions, ${appliedCount} applied`)
+    console.log(`Autofix suggestions: ${suggestions.length}, applied: ${appliedCount}`)
 
-    return NextResponse.json({
-      count: suggestions.length,
-      suggestions,
-      applied: apply,
-      appliedCount,
-      threshold,
-    })
+    return jsonWithRequestId({ count: suggestions.length, suggestions, applied: apply, appliedCount, threshold })
 
   } catch (error) {
     console.error('Auto-fix error:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to generate auto-fix suggestions', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      }, 
+    return jsonWithRequestId(
+      { ok: false, error: 'Failed to generate auto-fix suggestions', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
