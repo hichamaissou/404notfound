@@ -3,7 +3,7 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { createShopifyAdminGraphQL } from '@/lib/shopify/admin-graphql'
 
 interface CrawlJob {
-  scanId: number
+  scanId: string
   url: string
   depth: number
   shopDomain: string
@@ -26,7 +26,7 @@ export class WebScanner {
   private visitedUrls = new Set<string>()
   private processing = new Set<string>()
 
-  async startScan(shopId: number, shopDomain: string, accessToken: string): Promise<number> {
+  async startScan(shopId: string, shopDomain: string, accessToken: string): Promise<string> {
     // Create scan record
     const [scan] = await db
       .insert(siteScans)
@@ -332,14 +332,14 @@ export class WebScanner {
     }
   }
 
-  private async markJobCompleted(jobId: number): Promise<void> {
+  private async markJobCompleted(jobId: string): Promise<void> {
     await db
       .update(jobs)
       .set({ status: 'completed', updatedAt: new Date() })
       .where(eq(jobs.id, jobId))
   }
 
-  private async markJobFailed(jobId: number, error: string): Promise<void> {
+  private async markJobFailed(jobId: string, error: string): Promise<void> {
     await db
       .update(jobs)
       .set({ 

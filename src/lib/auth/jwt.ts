@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from 'jose'
 const secret = new TextEncoder().encode(process.env.ENCRYPTION_KEY)
 
 export interface JWTPayload {
-  shopId: number
+  shopId: string
   shopDomain: string
   iat?: number
   exp?: number

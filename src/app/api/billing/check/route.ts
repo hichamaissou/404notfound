@@ -32,17 +32,17 @@ export async function GET(request: NextRequest) {
 
     const hasActiveSubscription = subscription.status === 'active' && (
       isInTrial || // Still in trial
-      subscription.billingOn // Has paid billing
+      subscription.currentPeriodEnd // Has paid billing
     )
 
     return NextResponse.json({
       hasActiveSubscription,
       isInTrial,
-      trialExpired: trialExpired && !subscription.billingOn,
+      trialExpired: trialExpired && !subscription.currentPeriodEnd,
       trialEndsAt: subscription.trialEndsAt,
       status: subscription.status,
       planName: subscription.planName,
-      price: subscription.price,
+      price: subscription.priceAmount,
       currency: subscription.currency,
       needsSubscription: !hasActiveSubscription,
     })

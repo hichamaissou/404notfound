@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function processCSVImport(
-  shopId: number,
-  importId: number,
+  shopId: string,
+  importId: string,
   records: Array<{ path: string; target: string }>
 ) {
   const errors: string[] = []
@@ -110,10 +110,8 @@ async function processCSVImport(
           .insert(redirects)
           .values({
             shopId,
-            shopifyId: shopifyRedirect.id,
-            path: record.path,
-            target: record.target,
-            createdBy: 'csv',
+            fromPath: record.path,
+            toPath: record.target,
           })
 
         successCount++
@@ -143,11 +141,11 @@ async function processCSVImport(
       .update(imports)
       .set({
         status: 'completed',
-        completedAt: new Date(),
         processedRows: processedCount,
         successRows: successCount,
         errorRows: errors.length,
         errors: errors.length > 0 ? errors : null,
+        updatedAt: new Date(),
       })
       .where(eq(imports.id, importId))
 
@@ -159,8 +157,8 @@ async function processCSVImport(
       .update(imports)
       .set({
         status: 'failed',
-        completedAt: new Date(),
         errors: [error instanceof Error ? error.message : 'Processing failed'],
+        updatedAt: new Date(),
       })
       .where(eq(imports.id, importId))
   }

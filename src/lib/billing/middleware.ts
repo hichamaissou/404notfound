@@ -9,7 +9,7 @@ export interface BillingStatus {
   needsUpgrade: boolean
 }
 
-export async function checkBillingStatus(shopId: number): Promise<BillingStatus> {
+export async function checkBillingStatus(shopId: string): Promise<BillingStatus> {
   const [subscription] = await db
     .select()
     .from(subscriptions)
@@ -32,13 +32,13 @@ export async function checkBillingStatus(shopId: number): Promise<BillingStatus>
 
   const hasActiveSubscription = subscription.status === 'active' && (
     !!isInTrial || // Still in trial
-    !!subscription.billingOn // Has paid billing
+    !!subscription.currentPeriodEnd // Has paid billing
   )
 
   return {
     hasActiveSubscription,
     isInTrial: !!isInTrial,
-    trialExpired: !!trialExpired && !subscription.billingOn,
+    trialExpired: !!trialExpired && !subscription.currentPeriodEnd,
     needsUpgrade: !hasActiveSubscription,
   }
 }
@@ -58,7 +58,7 @@ export const PRO_FEATURES = {
 } as const
 
 export async function hasFeatureAccess(
-  shopId: number, 
+  shopId: string, 
   feature: string
 ): Promise<boolean> {
   const billing = await checkBillingStatus(shopId)

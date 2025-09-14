@@ -57,11 +57,17 @@ export async function GET(request: NextRequest) {
     // Create default subscription (trial) if it doesn't exist
     const trialEndsAt = new Date()
     trialEndsAt.setDate(trialEndsAt.getDate() + parseInt(process.env.BILLING_TRIAL_DAYS || '14'))
+    const planName = process.env.BILLING_PLAN_NAME ?? 'Pro';
+    const priceAmount = process.env.BILLING_PRICE_AMOUNT ?? '14.00';
+    const currency = process.env.BILLING_CURRENCY ?? 'EUR';
 
     await db
       .insert(subscriptions)
       .values({
         shopId: shopRecord.id,
+        planName,
+        priceAmount,
+        currency,
         status: 'active', // Start with trial
         trialEndsAt,
       })

@@ -13,7 +13,7 @@ export async function sendWeeklyDigests(): Promise<void> {
     })
     .from(shops)
     .innerJoin(settings, eq(settings.shopId, shops.id))
-    .where(eq(settings.weeklyDigest, true))
+    .where(eq(settings.digestEmail, true))
 
   for (const { shop, settings: shopSettings } of shopsWithDigest) {
     try {
@@ -70,7 +70,7 @@ async function generateAndSendDigest(shop: any, shopSettings: any): Promise<void
   const conversionRate = parseFloat(shopSettings.conversionRate)
   const avgOrderValue = parseFloat(shopSettings.averageOrderValue)
   const estimatedRevenueLoss = totalBrokenUrls.reduce((sum, url) => {
-    return sum + (url.resolved ? 0 : url.hits * conversionRate * avgOrderValue)
+    return sum + (url.isResolved ? 0 : url.hits * conversionRate * avgOrderValue)
   }, 0)
 
   const digestData = {
@@ -109,7 +109,7 @@ async function generateAndSendDigest(shop: any, shopSettings: any): Promise<void
 }
 
 export async function sendAlert(
-  shopId: number,
+  shopId: string,
   alertType: string,
   message: string,
   details?: any
@@ -134,10 +134,11 @@ export async function sendAlert(
       .where(eq(settings.shopId, shopId))
       .limit(1)
 
-    if (!shopSettings?.alertsEnabled) {
-      console.log(`Alerts disabled for ${shop.shopDomain}`)
-      return
-    }
+    // For now, always send alerts (alertsEnabled was removed from new schema)
+    // if (!shopSettings?.alertsEnabled) {
+    //   console.log(`Alerts disabled for ${shop.shopDomain}`)
+    //   return
+    // }
 
     // Send alert email (simplified - in production you'd get the actual email)
     const emailAddress = `admin@${shop.shopDomain}`

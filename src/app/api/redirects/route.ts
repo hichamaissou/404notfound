@@ -57,17 +57,15 @@ export async function POST(request: NextRequest) {
       .insert(redirects)
       .values({
         shopId: session.shopId,
-        shopifyId: shopifyRedirect.id,
-        path,
-        target,
-        createdBy: 'manual',
+        fromPath: path,
+        toPath: target,
       })
       .returning()
 
     // Mark corresponding broken URL as resolved
     await db
       .update(brokenUrls)
-      .set({ resolved: true })
+      .set({ isResolved: true, resolvedAt: new Date() })
       .where(and(
         eq(brokenUrls.shopId, session.shopId),
         eq(brokenUrls.path, path)

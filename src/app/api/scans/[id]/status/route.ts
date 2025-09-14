@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, ctx: any) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const scanId = parseInt(ctx.params.id)
+    const scanId = ctx.params.id
 
     // Get scan details
     const [scan] = await db

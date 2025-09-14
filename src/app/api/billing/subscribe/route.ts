@@ -23,15 +23,15 @@ export async function POST(request: NextRequest) {
 
     // In test mode, simulate successful subscription
     if (process.env.BILLING_TEST_MODE === 'true') {
-      const billingOn = new Date()
-      billingOn.setMonth(billingOn.getMonth() + 1) // Next month
+      const currentPeriodEnd = new Date()
+      currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1) // Next month
 
       await db
         .update(subscriptions)
         .set({
           status: 'active',
-          shopifyChargeId: 'test_charge_' + Date.now(),
-          billingOn,
+          shopifySubscriptionId: 'test_subscription_' + Date.now(),
+          currentPeriodEnd,
           updatedAt: new Date(),
         })
         .where(eq(subscriptions.shopId, session.shopId))
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     await db
       .update(subscriptions)
       .set({
-        shopifyChargeId: charge.id.toString(),
+        shopifySubscriptionId: charge.id.toString(),
         status: 'pending',
         updatedAt: new Date(),
       })

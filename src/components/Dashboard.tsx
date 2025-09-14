@@ -23,12 +23,12 @@ interface DashboardProps {
 }
 
 interface BrokenUrl {
-  id: number
+  id: string
   path: string
   hits: number
   firstSeen: string
   lastSeen: string
-  resolved: boolean
+  isResolved: boolean
 }
 
 interface DashboardStats {
@@ -163,7 +163,7 @@ export default function Dashboard({ token }: DashboardProps) {
       url.hits.toString(),
       formatDate(url.firstSeen),
       formatDate(url.lastSeen),
-      url.resolved ? (
+      url.isResolved ? (
         <Badge tone="success">Resolved</Badge>
       ) : (
         <Badge tone="attention">Active</Badge>
@@ -171,7 +171,7 @@ export default function Dashboard({ token }: DashboardProps) {
       <Button
         size="slim"
         onClick={() => createRedirect(url.path)}
-        disabled={url.resolved}
+        disabled={url.isResolved}
       >
         Create Redirect
       </Button>,
