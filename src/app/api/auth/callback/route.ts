@@ -57,22 +57,36 @@ export async function GET(request: NextRequest) {
     console.log('Token exchange successful:', { scope: tokenData.scope })
 
     // Store or update shop in database
-    const [shopRecord] = await db
-      .insert(shops)
-      .values({
-        shopDomain: shop,
-        accessToken: tokenData.access_token,
-        scope: tokenData.scope,
-      })
-      .onConflictDoUpdate({
-        target: shops.shopDomain,
-        set: {
+    console.log('Attempting to insert/update shop:', { shop, scope: tokenData.scope })
+    
+    let shopRecord
+    try {
+      [shopRecord] = await db
+        .insert(shops)
+        .values({
+          shopDomain: shop,
           accessToken: tokenData.access_token,
           scope: tokenData.scope,
-          updatedAt: new Date(),
-        },
+        })
+        .onConflictDoUpdate({
+          target: shops.shopDomain,
+          set: {
+            accessToken: tokenData.access_token,
+            scope: tokenData.scope,
+            updatedAt: new Date(),
+          },
+        })
+        .returning()
+      
+      console.log('Shop record created/updated:', { id: shopRecord.id, domain: shopRecord.shopDomain })
+    } catch (dbError) {
+      console.error('Database error details:', {
+        error: dbError,
+        message: dbError instanceof Error ? dbError.message : 'Unknown DB error',
+        stack: dbError instanceof Error ? dbError.stack : undefined
       })
-      .returning()
+      throw new Error(`Database operation failed: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`)
+    }
 
     // Create default settings if they don't exist
     await db
