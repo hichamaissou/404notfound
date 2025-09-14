@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, shops, siteScans, jobs } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,18 +38,16 @@ export async function POST(request: NextRequest) {
     const maxPages = 1500
     const concurrency = 4
 
-    // Create site scan record
+    // Create site scan record using raw SQL to avoid Drizzle issues
     console.log('Creating site scan...')
     
     const scanId = crypto.randomUUID()
     console.log('Using scan ID:', scanId)
     
-    await db.insert(siteScans).values({
-      id: scanId,
-      shopId,
-      status: 'queued',
-      startedAt: new Date(),
-    })
+    await db.execute(sql`
+      INSERT INTO site_scans (id, shop_id, status, started_at)
+      VALUES (${scanId}, ${shopId}, 'queued', ${new Date().toISOString()})
+    `)
     
     console.log('Site scan created successfully')
 
