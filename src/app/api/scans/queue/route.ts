@@ -74,6 +74,17 @@ export async function POST(request: NextRequest) {
 
     console.log('Job created successfully')
 
+    // Immediately try to run the job (for immediate execution)
+    try {
+      console.log('Attempting to run job immediately...')
+      const { runPendingJobs } = await import('@/lib/jobs/runner')
+      const jobResult = await runPendingJobs(1)
+      console.log('Immediate job execution result:', jobResult)
+    } catch (jobError) {
+      console.error('Immediate job execution failed:', jobError)
+      // Don't fail the scan creation if job execution fails
+    }
+
     console.log(`Queued scan for ${shop}: scanId=${scanId}, jobId=${jobId}, maxPages=${maxPages}, concurrency=${concurrency}`)
 
     return NextResponse.json({
