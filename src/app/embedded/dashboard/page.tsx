@@ -76,6 +76,15 @@ export default function DashboardPage() {
     setToastActive(true)
   }
 
+  // Debug shop detection
+  useEffect(() => {
+    console.log('Dashboard shop detection:', {
+      shop,
+      url: typeof window !== 'undefined' ? window.location.href : 'server',
+      searchParams: typeof window !== 'undefined' ? window.location.search : 'server'
+    })
+  }, [shop])
+
   const fetchDashboardData = async () => {
     if (!shop) {
       setError('Shop not found')
@@ -99,9 +108,26 @@ export default function DashboardPage() {
   }
 
   const handleScanNow = async () => {
-    if (!shop) return
+    if (!shop) {
+      showToast('Shop not found in URL or localStorage')
+      return
+    }
 
     try {
+      console.log('Starting scan for shop:', shop)
+      
+      // First test if shop exists
+      const testResponse = await fetch(`/api/debug/scan-test?shop=${encodeURIComponent(shop)}`)
+      const testData = await testResponse.json()
+      
+      if (!testResponse.ok) {
+        console.error('Shop test failed:', testData)
+        showToast(`Shop test failed: ${testData.error}`)
+        return
+      }
+
+      console.log('Shop test passed:', testData)
+
       const response = await fetch('/api/scans/queue', {
         method: 'POST',
         headers: {
@@ -110,13 +136,19 @@ export default function DashboardPage() {
         body: JSON.stringify({ shop }),
       })
 
+      const result = await response.json()
+      console.log('Scan queue response:', result)
+
       if (response.ok) {
         showToast('Scan queued successfully!')
+        // Refresh dashboard data
+        setTimeout(() => fetchDashboardData(), 1000)
       } else {
-        throw new Error('Failed to queue scan')
+        throw new Error(result.error || 'Failed to queue scan')
       }
     } catch (err) {
-      showToast('Failed to queue scan')
+      console.error('Scan error:', err)
+      showToast(`Failed to queue scan: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
