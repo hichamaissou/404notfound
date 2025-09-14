@@ -128,7 +128,7 @@ export default function DashboardPage() {
 
       console.log('Shop test passed:', testData)
 
-      const response = await fetch('/api/scans/queue-v2', {
+      const response = await fetch('/api/scans/queue', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
